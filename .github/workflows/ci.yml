@@ -141,25 +141,23 @@ jobs:
       - name: Integration tests
         working-directory: trmnl-spec
         env:
-          TRMNL_SIM_ARTIFACTS: ${{ github.workspace }}/sim-artifacts
-          TRMNL_SIM_COVERAGE: ${{ github.workspace }}/sim-coverage
           # every setup flow in full; the default ENVS (the core devices, built above)
-          TRMNL_SPEC_NO_CACHE: "1"
+          NO_CACHE: "1"
           # the headless build above (rake spec would otherwise build the default one)
-          TRMNL_SIM_BIN: ${{ github.workspace }}/trmnl-sim/target/release/trmnl-sim
+          SIM_BIN: ${{ github.workspace }}/trmnl-sim/target/release/trmnl-sim
         run: bundle exec rake spec
 
       - name: Collect screen diffs
         if: failure()
         run: |
-          mkdir -p sim-artifacts
-          find trmnl-spec/golden -name '*.actual.png' -exec cp {} sim-artifacts/ \; || true
+          mkdir -p trmnl-spec/out/artifacts
+          find trmnl-spec/golden -name '*.actual.png' -exec cp {} trmnl-spec/out/artifacts/ \; || true
 
       - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: simulator-logs-and-screens
-          path: sim-artifacts/
+          path: trmnl-spec/out/artifacts/
           if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v6
@@ -167,6 +165,6 @@ jobs:
         with:
           name: firmware-coverage
           path: |
-            sim-coverage/merged.info
-            sim-coverage/html/
+            trmnl-spec/out/cov/merged.info
+            trmnl-spec/out/cov/html/
           if-no-files-found: ignore

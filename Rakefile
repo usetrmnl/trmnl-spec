@@ -10,12 +10,12 @@
 #   rake "spec[-n 4 spec/core]"                        # parallel_rspec's arguments pass through
 #   rake "firmware[xteink_x4]" spec                    # pio run -e xteink_x4 first
 #   rake check                                         # rubocop, and the specs load (no firmware needed)
-#   rake "coverage[cov/ --include src/ -q]"            # merge and report lcov tracefiles (TrmnlSim::Lcov)
+#   rake "coverage[DIR --include src/ -q]"            # merge and report lcov tracefiles (TrmnlSim::Lcov)
 #
 # A task's argument is one string, split like a shell command line (quote the task in zsh: its
 # brackets are globs).
 #
-# Uses ../trmnl-firmware/.pio/build/<env> (TRMNL_FIRMWARE=<checkout> to use another one); a
+# Uses ../trmnl-firmware/.pio/build/<env> (FIRMWARE_REPO=<checkout> to use another one); a
 # listed device whose build is missing is left out. The firmware is only built by `rake
 # firmware`. Onboarded devices etc. are cached in tmp/spec-cache/, keyed by the firmware, the
 # simulator and the spec support code. See the README for the environment variables.
@@ -37,11 +37,11 @@ task :spec, [:args] => :sim do |_, args|
   sh(*cmd, chdir: Builds::HERE) { |ok, _| exit(1) unless ok } # failures are reported above; no backtrace
 end
 
-desc "Build the simulator (cargo build --release) unless TRMNL_SIM_BIN names one"
+desc "Build the simulator (cargo build --release) unless SIM_BIN names one"
 task :sim do
-  next if ENV.fetch("TRMNL_SIM_BIN", "") != ""
+  next if ENV.fetch("SIM_BIN", "") != ""
   unless File.exist?(File.join(TrmnlSim::REPO, "Cargo.toml"))
-    next warn("no trmnl-sim checkout at #{TrmnlSim::REPO}: set TRMNL_SIM_REPO or TRMNL_SIM_BIN")
+    next warn("no trmnl-sim checkout at #{TrmnlSim::REPO}: set SIM_REPO or SIM_BIN")
   end
 
   sh "cargo", "build", "--release", chdir: TrmnlSim::REPO

@@ -14,14 +14,14 @@ require "tmpdir"
 # be invalidated by hand. Entries live in tmp/spec-cache/ (gitignored; delete it to start over), and
 # only the newest few per fixture are kept.
 #
-# TRMNL_SPEC_NO_CACHE=1 builds everything from scratch, as CI does, and
-# so does a coverage run (TRMNL_SIM_COVERAGE), whose report should include the setup flows.
+# NO_CACHE=1 builds everything from scratch, as CI does. An entry keeps the coverage of the
+# setup flow that made it, for the runs that use it (CoverageReport).
 # Parallel workers that need the same missing entry build it once: the others wait for it.
 module SetupCache
   DIR = File.join(Builds::HERE, "tmp/spec-cache")
-  ENABLED = ENV.fetch("TRMNL_SPEC_NO_CACHE", "").empty? && ENV.fetch("TRMNL_SIM_COVERAGE", "").empty?
+  ENABLED = ENV.fetch("NO_CACHE", "").empty?
   # Bump when what an entry holds changes shape.
-  FORMAT = 2
+  FORMAT = 3
   # Entries kept per fixture name (e.g. while switching between firmware branches).
   KEEP = 3
   # What the simulator loads from a PlatformIO build dir (see src/firmware.rs).
@@ -55,7 +55,9 @@ module SetupCache
     unless ENABLED
       dir = Dir.mktmpdir("trmnl-#{name}-")
       at_exit { FileUtils.rm_rf(dir) }
-      return [dir, JSON.parse(JSON.generate(yield(dir)))]
+      made = build(dir) { yield(dir) }
+      CoverageReport.adopt(name, File.join(dir, "coverage"))
+      return [dir, JSON.parse(JSON.generate(made))]
     end
 
     inputs = { name:, format: FORMAT, sim: sim_id, support: SUPPORT_FILES.map { file_hash(_1) } }.merge(inputs)
@@ -71,7 +73,7 @@ module SetupCache
 
       tmp = Dir.mktmpdir(".#{name}-", DIR)
       begin
-        made = yield(tmp)
+        made = build(tmp) { yield(tmp) }
         File.write(File.join(tmp, "meta.json"), JSON.generate(made))
         File.rename(tmp, dir)
         JSON.parse(JSON.generate(made))
@@ -81,8 +83,12 @@ module SetupCache
       end
     end
     prune(name)
+    CoverageReport.adopt(name, File.join(dir, "coverage"))
     [dir, meta]
   end
+
+  # Fill an entry's directory, recording the setup flow's coverage into it.
+  def build(dir, &) = CoverageReport.recording_into(File.join(dir, "coverage"), &)
 
   def sort_keys(value)
     case value

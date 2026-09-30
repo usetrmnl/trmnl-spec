@@ -22,8 +22,10 @@ RSpec.configure do |config|
   Metadata.install(config)
 
   config.before(:suite) do
+    CoverageReport.install
+    Artifacts.install
     unless File.executable?(TrmnlSim.binary)
-      abort "no simulator at #{TrmnlSim.binary}: build it (rake sim, or cargo build --release) or set TRMNL_SIM_BIN"
+      abort "no simulator at #{TrmnlSim.binary}: build it (rake sim, or cargo build --release) or set SIM_BIN"
     end
     missing = Selection.missing
     if missing.any?
@@ -35,9 +37,9 @@ RSpec.configure do |config|
   end
 
   config.after(:suite) do
-    if (dir = CoverageReport.dir) && ParallelTests.first_process?
+    if ParallelTests.first_process?
       ParallelTests.wait_for_other_processes_to_finish
-      CoverageReport.print(dir)
+      CoverageReport.print
     end
   end
 

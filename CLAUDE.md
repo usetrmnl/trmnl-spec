@@ -29,7 +29,7 @@ injection, memcheck, coverage) is documented in ../trmnl-sim/README.md.
   the general `:smoke` examples; `:full` runs every general example on it. Default
   `trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr`; unlisted devices and missing
   builds are left out (a new example without `:smoke` needs its device listed with `:full`).
-  `TRMNL_SIM_SLOW=1`, `TRMNL_SPEC_NO_CACHE=1` as needed.
+  `SLOW=1`, `NO_CACHE=1` as needed.
 - While iterating, run ONE group or example at a time under a hard limit and clean up:
   `perl -e 'alarm 90; exec @ARGV' bundle exec rspec spec/general/setup/portal_spec.rb:42; pkill -f target/release/trmnl-sim`
   (`ENVS=<env>` or `ENVS=<env>:full` for one device). No full-suite runs for debugging; a

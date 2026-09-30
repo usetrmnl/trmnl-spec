@@ -18,12 +18,12 @@ module TrmnlSim
   class Error < StandardError; end
   class TimeoutError < Error; end
 
-  # The trmnl-sim checkout (for its default binary, target/release/trmnl-sim): TRMNL_SIM_REPO, else
+  # The trmnl-sim checkout (for its default binary, target/release/trmnl-sim): SIM_REPO, else
   # ../trmnl-sim next to this repository.
-  REPO = File.expand_path(ENV.fetch("TRMNL_SIM_REPO", nil) || File.join(__dir__, "../../trmnl-sim"))
+  REPO = File.expand_path(ENV.fetch("SIM_REPO", nil) || File.join(__dir__, "../../trmnl-sim"))
 
-  # The simulator executable: TRMNL_SIM_BIN, else the checkout's release build.
-  def self.binary = ENV.fetch("TRMNL_SIM_BIN", nil) || File.join(REPO, "target/release/trmnl-sim")
+  # The simulator executable: SIM_BIN, else the checkout's release build.
+  def self.binary = ENV.fetch("SIM_BIN", nil) || File.join(REPO, "target/release/trmnl-sim")
 end
 
 require_relative "trmnl_sim/headers"

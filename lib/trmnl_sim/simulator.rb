@@ -15,7 +15,7 @@ module TrmnlSim
   #   mac:        device MAC, e.g. "D8:3B:DA:F5:28:3C" (the server identity).
   #   turbo:      run unthrottled (virtual time faster than wall time when idle).
   #   gui:        show the window too.
-  #   binary:     the trmnl-sim executable (default: $TRMNL_SIM_BIN or target/release/trmnl-sim).
+  #   binary:     the trmnl-sim executable (default: $SIM_BIN or target/release/trmnl-sim).
   #   extra_args: more command line arguments.
   #   faults:     faults injected from the start (as for `set_faults`), e.g.
   #               { power_loss: { partition: "nvs" } }.
@@ -25,17 +25,24 @@ module TrmnlSim
   #               violations; `memcheck` returns the full report.
   #   memcheck_suppress: functions whose (known) memory bugs to tolerate: a violation with one
   #               of them in its backtrace, allocation or free stack is only counted.
-  #   name:       label for artifacts. If $TRMNL_SIM_ARTIFACTS is set, the log and final screen
-  #               of every simulator are saved there on close (handy in CI).
+  #   name:       label for artifacts. If `Simulator.artifacts_dir` is set, the log and final
+  #               screen of every simulator are saved there on close.
   #   restore:    start from this save point file (see `save_point`) instead of booting.
   #   host_ports: { guest port => host port }; the device's connections to 10.0.2.2:<guest port>
   #               go to the host port instead (`--host-port`), e.g. for a device onboarded
   #               against a server that has since moved to another port.
   #   coverage:   record firmware code coverage and write an lcov tracefile here when the
-  #               simulator exits (`--coverage`). If $TRMNL_SIM_COVERAGE is set to a directory,
-  #               every simulator writes one there (`<name>-*.info`); merge them with
+  #               simulator exits (`--coverage`). If `Simulator.coverage_dir` is set, every
+  #               simulator writes one there (`<build>/<name>-*.info`); merge them with
   #               TrmnlSim::Lcov (`rake coverage`).
   class Simulator
+    class << self
+      # Where every simulator writes a coverage tracefile unless given `coverage:` (nil: none).
+      attr_accessor :coverage_dir
+      # Where every simulator saves its log and final screen on close (nil: nowhere).
+      attr_accessor :artifacts_dir
+    end
+
     # Console line index after the last matched line (where `wait(console:)` searches from).
     attr_accessor :cursor
 
@@ -130,7 +137,7 @@ module TrmnlSim
 
     # Write the firmware code coverage so far as an lcov tracefile (default: the `coverage`
     # path) and return its totals (lines_found, lines_hit, functions_found, functions_hit, files,
-    # path). `reset` starts over afterwards. Needs `coverage:` (or $TRMNL_SIM_COVERAGE).
+    # path). `reset` starts over afterwards. Needs `coverage:` (or `Simulator.coverage_dir`).
     def write_coverage(path = nil, reset: false)
       body = { reset: }
       body[:path] = File.expand_path(path.to_s) if path
@@ -489,8 +496,8 @@ module TrmnlSim
     end
 
     def default_coverage_path
-      dir = ENV.fetch("TRMNL_SIM_COVERAGE", nil)
-      return if dir.nil? || dir.empty?
+      dir = self.class.coverage_dir
+      return unless dir
 
       # one directory per build (named after its environment), for per-device reports
       build_cov = File.join(dir, File.basename(build_dir))
@@ -502,8 +509,8 @@ module TrmnlSim
     end
 
     def save_artifacts
-      out = ENV.fetch("TRMNL_SIM_ARTIFACTS", nil)
-      return if out.nil? || out.empty?
+      out = self.class.artifacts_dir
+      return unless out
 
       FileUtils.mkdir_p(out)
       n = 0

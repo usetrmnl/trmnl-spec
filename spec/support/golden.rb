@@ -3,7 +3,7 @@
 require "fileutils"
 
 # Golden screenshots: golden/<name> for the TRMNL OG (and 800x480 panels that draw like it),
-# golden/<env>/<name> for devices with their own. TRMNL_SIM_UPDATE_GOLDEN=1 rewrites them from
+# golden/<env>/<name> for devices with their own. UPDATE_GOLDEN=1 rewrites them from
 # the screen instead of comparing; look at every new or rewritten golden before committing it.
 module Golden
   DIR = File.join(Builds::HERE, "golden")
@@ -51,7 +51,7 @@ module Golden
   end
 
   # Compare the screen of `sim` (or its `region`) to the PNG at `file`. With `write_missing`,
-  # a missing golden is written from the screen instead; with `update` (TRMNL_SIM_UPDATE_GOLDEN)
+  # a missing golden is written from the screen instead; with `update` (UPDATE_GOLDEN)
   # every golden is. Raises Mismatch, saving the actual screen next to the golden as
   # `<name>.<actual_suffix>.png`.
   def check(sim, file, region: nil, actual_suffix: "actual", write_missing: false, update: Builds::UPDATE_GOLDEN,
@@ -62,7 +62,7 @@ module Golden
     end
     unless File.exist?(file)
       raise Mismatch,
-            "no golden #{file}: make it with TRMNL_SIM_UPDATE_GOLDEN=1 and check it before committing it"
+            "no golden #{file}: make it with UPDATE_GOLDEN=1 and check it before committing it"
     end
 
     result = sim.compare_screen(file, region:, **compare)
@@ -75,7 +75,7 @@ module Golden
   end
 
   # Golden::check against `for_device(name)`, in the device's own region for it if it has one.
-  # A missing golden fails instead of being written unless TRMNL_SIM_UPDATE_GOLDEN=1: a new
+  # A missing golden fails instead of being written unless UPDATE_GOLDEN=1: a new
   # device's goldens are made on purpose, and looked at before they are committed. Only the
   # device's own goldens are rewritten (another device's run leaves the OG's alone).
   def check_device(sim, name, device, region: nil, **)

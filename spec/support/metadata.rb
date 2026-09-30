@@ -15,8 +15,8 @@
 #   it "...", skip_if: :shipment, why: "..."              # skipped on devices with this feature
 #   it "...", only_on: %w[trmnl trmnl_4clr], why: "..."   # skipped on other devices
 #   it "...", needs_build: "trmnl_4clr"                   # skipped unless that build exists
-#   it "...", slow: "the wiper runs 100 refreshes"        # skipped unless TRMNL_SIM_SLOW=1
-#   it "...", :network                                     # reaches trmnl.app: TRMNL_SIM_NETWORK=1
+#   it "...", slow: "the wiper runs 100 refreshes"        # skipped unless SLOW=1
+#   it "...", :network                                     # reaches trmnl.app: NETWORK=1
 #   it "...", known_failure: { "xteink_x4" => reason,     # expected to fail (pending) on that
 #                              %w[a b] => reason }        #   device
 #   it "...", pending: reason                             # expected to fail everywhere
@@ -63,9 +63,9 @@ module Metadata
       return "only on #{Array(envs).join(', ')}: #{meta.fetch(:why)}"
     end
 
-    return "reaches the real trmnl.app; TRMNL_SIM_NETWORK=1 runs it" if meta[:network] && !Builds::NETWORK
+    return "reaches the real trmnl.app; NETWORK=1 runs it" if meta[:network] && !Builds::NETWORK
 
-    "slow (#{meta[:slow]}); TRMNL_SIM_SLOW=1 runs it" if meta[:slow] && !Builds::SLOW
+    "slow (#{meta[:slow]}); SLOW=1 runs it" if meta[:slow] && !Builds::SLOW
   end
 
   # The reason the device of `meta` fails this example, from the `known_failure:` of the

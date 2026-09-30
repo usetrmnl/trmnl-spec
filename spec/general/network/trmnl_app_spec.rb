@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The device under test against the real trmnl.app API (opt-in: TRMNL_SIM_NETWORK=1).
+# The device under test against the real trmnl.app API (opt-in: NETWORK=1).
 
 General.describe "TRMNL app" do
   describe "TrmnlApp", :network do
