@@ -29,9 +29,8 @@ General.describe "HTTPS" do
       device_mock(tls: true) do |mock|
         onboard(mock) do |s|
           # the setup logo (always the mock's BMP), then the default screen
-          expect(mock.paths).to eq(["/api/setup", "/images/default.bmp", "/api/log", "/api/display",
-                                    mock.image_path("default")])
-          expect(mock.requests[3]).to have_header("Access-Token", mock.api_key)
+          expect(mock.paths).to eq(["/api/setup", "/images/default.bmp", "/api/display", mock.image_path("default")])
+          expect(mock.requests[2]).to have_header("Access-Token", mock.api_key)
           # a full handshake every time: only trmnl.app sessions are resumed
           expect(refresh(s, mock).map(&:tls_resumed).uniq).to eq([false])
         end
@@ -44,11 +43,11 @@ General.describe "HTTPS" do
       device_mock(tls: true) do |mock|
         mock.device_host = "trmnl.app"
         onboard(mock, "--dns", "trmnl.app=10.0.2.2") do |s|
-          # /api/setup uses a plain client; /api/log's resumable client starts the session the
-          # later requests resume
+          # /api/setup and the setup logo use a plain client; /api/display's resumable client
+          # starts the session the later requests resume
           expect(mock.requests.map { [_1.path, _1.tls_resumed] })
-            .to eq([["/api/setup", false], ["/images/default.bmp", false], ["/api/log", false],
-                    ["/api/display", true], [mock.image_path("default"), true]])
+            .to eq([["/api/setup", false], ["/images/default.bmp", false], ["/api/display", false],
+                    [mock.image_path("default"), true]])
           expect(refresh(s, mock).map(&:tls_resumed).uniq).to eq([true])
           # a power cycle loses RTC memory, and with it the session: full handshake
           first = refresh(s, mock, wake: s.method(:power_cycle)).first
