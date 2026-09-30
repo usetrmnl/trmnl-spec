@@ -53,7 +53,7 @@ end
 namespace :firmware do
   # Never `pio run -c <other.ini>` here: another project config wipes every env's .pio/build.
   desc "Build firmware with PlatformIO (argument: environments; default: the core devices')"
-  task :build, [:envs] do |_, args|
+  task :build, [:args] do |_, args|
     envs = task_args(args)
     envs = Devices::CORE.map(&:env) if envs.empty?
     sh "pio", "run", "-d", Builds::FIRMWARE, *envs.flat_map { ["-e", _1] }
