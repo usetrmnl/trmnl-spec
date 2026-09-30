@@ -17,19 +17,6 @@ module FaultsSpec
   end
 end
 
-# The examples that check the device shows the served image once the fault is gone.
-shows_the_image = {
-  %w[xteink_x4 TRMNL_4inch26_DIY_Kit seeed_sticky] => FirmwareBugs::SSD16XX_BMP,
-  "CrowPanel42" => FirmwareBugs::ONE_BIT_PNG_PANEL_TYPE,
-  "WAVESHARE_397" => "#{FirmwareBugs::SSD16XX_BMP}; and #{FirmwareBugs::EP397_ROW_SHIFT}",
-  "trmnl_gen2_4clr" => FirmwareBugs::GEN2_4CLR_IMAGE
-}
-# ...of which these get no internet (so no NTP either).
-no_internet = shows_the_image.merge(
-  "trmnl_gen2" => FirmwareBugs::GEN2_NTP_HANG,
-  "trmnl_gen2_4clr" => "#{FirmwareBugs::GEN2_NTP_HANG}; and #{FirmwareBugs::GEN2_4CLR_IMAGE}"
-)
-
 General.describe "Faults" do
   fixture(:dev) { ProvisionedDevice.new(build) }
   fixture(:named) { FaultsSpec::NamedServerDevice.new(build) }
@@ -76,7 +63,7 @@ General.describe "Faults" do
   let(:size) { dev.mock.image_size(path) }
 
   describe "ServerErrors" do
-    it "http 500 from api display is retried then sleeps", :smoke, known_failure: shows_the_image do
+    it "http 500 from api display is retried then sleeps", :smoke do
       dev.mock.set_fault("/api/display", status: 500)
       dev.boot do |s|
         st = s.wait_for_deep_sleep(timeout: 120)
@@ -88,7 +75,7 @@ General.describe "Faults" do
       end
     end
 
-    it "malformed json is rejected", known_failure: shows_the_image do
+    it "malformed json is rejected" do
       dev.mock.set_fault("/api/display", body: '{"status": 0, "image_url": ')
       dev.boot do |s|
         s.wait(console: /JSON deserialization error/, timeout: 120)
@@ -100,7 +87,7 @@ General.describe "Faults" do
   end
 
   describe "BrokenDownloads" do
-    it "truncated image is not shown", known_failure: shows_the_image do
+    it "truncated image is not shown" do
       dev.mock.set_fault("/images/*", truncate: [10_000, size / 4].min)
       dev.boot do |s|
         s.wait(console: /incomplete download/, timeout: 120)
@@ -110,7 +97,7 @@ General.describe "Faults" do
       end
     end
 
-    it "connection reset mid download", known_failure: shows_the_image do
+    it "connection reset mid download" do
       dev.boot(faults: { net: { tcp_cut: { after_bytes: [20_000, size / 2].min } } }) do |s|
         dev.mock.wait_for_request(path, timeout: 120)
         s.wait_for_deep_sleep(timeout: 120)
@@ -129,7 +116,7 @@ General.describe "Faults" do
 
     { "slow high latency link" => { latency_ms: 250, bandwidth_bps: 16_000 },
       "lossy link" => { loss: 0.05 } }.each do |link, net|
-      it "#{link} still works", known_failure: shows_the_image do
+      it "#{link} still works" do
         dev.boot(faults: { net: }) do |s|
           s.wait(state: "deep_sleep", timeout: 180, settle_ms: 300)
           expect(s).to show_image(expected, tolerance: 64)
@@ -139,7 +126,7 @@ General.describe "Faults" do
   end
 
   describe "BadNetworks" do
-    it "access point without internet", known_failure: no_internet do
+    it "access point without internet" do
       dev.boot(faults: { net: { no_internet: true } }) do |s|
         st = s.wait(wifi_connected: true, timeout: 60)["status"]
         expect(st["ip"]).to eq("10.0.2.15"), "DHCP still works"
@@ -150,7 +137,7 @@ General.describe "Faults" do
     end
 
     %w[servfail timeout].each do |fault|
-      it "dns failure (#{fault})", known_failure: no_internet do
+      it "dns failure (#{fault})" do
         named.reset
         serve_one(named.mock)
         named.boot(faults: { net: { dns: fault } }) do |s|
@@ -167,7 +154,7 @@ General.describe "Faults" do
     # stores for /api/log). Cut the power in the middle of those writes, leaving a torn page,
     # at a few different points.
     [1, 4, 9].each do |nth|
-      it "power loss during nvs writes then boots (write #{nth})", known_failure: shows_the_image do
+      it "power loss during nvs writes then boots (write #{nth})" do
         dev.mock.set_fault("/api/display", status: 500)
         dev.boot(faults: { power_loss: { partition: "nvs", op: "program", nth:, cut: "torn" } }) do |s|
           s.wait(console: /\[sim\] power lost: program/, timeout: 120)
@@ -181,7 +168,7 @@ General.describe "Faults" do
       end
     end
 
-    it "power loss while the bootloader writes otadata", known_failure: shows_the_image do
+    it "power loss while the bootloader writes otadata" do
       # The fresh flash has blank otadata, which the bootloader initialises on first boot.
       dev.boot(faults: { power_loss: { partition: "otadata", cut: "torn" } }) do |s|
         s.wait(console: /\[sim\] power lost: erase/, timeout: 60)

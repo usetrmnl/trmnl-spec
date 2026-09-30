@@ -7,7 +7,7 @@
 #   RSpec.describe "Xteink X4", env: "xteink_x4" do       # left out unless ENVS lists it (Selection)
 #   General.describe "Refresh cycle" do                   # a group per listed device
 #
-# and examples or groups can say when they don't apply, or are known to fail:
+# and examples or groups can say when they don't apply:
 #
 #   it "...", :smoke                                      # runs on devices listed without :full
 #   it "...", needs: :button                              # skipped unless the device
@@ -17,13 +17,9 @@
 #   it "...", needs_build: "trmnl_4clr"                   # skipped unless that build exists
 #   it "...", slow: "the wiper runs 100 refreshes"        # skipped unless SLOW=1
 #   it "...", :network                                     # reaches trmnl.app: NETWORK=1
-#   it "...", known_failure: { "xteink_x4" => reason,     # expected to fail (pending) on that
-#                              %w[a b] => reason }        #   device
-#   it "...", pending: reason                             # expected to fail everywhere
 #
-# An example's known_failure: entries add to those of its groups.
-#
-# A pending example that passes fails the run ("FIXED"), so a firmware fix shows up.
+# There are no expected failures: an example the firmware gets wrong fails the run
+# (`known_failure:` and `pending:` are refused).
 module Metadata
   module_function
 
@@ -34,8 +30,6 @@ module Metadata
       meta[:if] = false if meta.key?(:execution_result) && !Selection.run_example?(meta)
       reason = skip_reason(meta)
       meta[:skip] = reason if reason && !meta[:skip]
-      failure = known_failure(meta)
-      meta[:pending] = failure if failure && !meta[:skip] && !meta[:pending]
     end
   end
 
@@ -68,28 +62,6 @@ module Metadata
     "slow (#{meta[:slow]}); SLOW=1 runs it" if meta[:slow] && !Builds::SLOW
   end
 
-  # The reason the device of `meta` fails this example, from the `known_failure:` of the
-  # example and its groups (an example's own entries add to its groups').
-  def known_failure(meta)
-    return unless (device = device_of(meta))
-
-    known_failures(meta).each do |envs, reason|
-      return "known failure on #{device.env}: #{reason}" if Array(envs).map(&:to_s).include?(device.env)
-    end
-    nil
-  end
-
-  def known_failures(meta)
-    chain = [meta]
-    # an example's group, or a group's parent (reading :example_group of a group is deprecated)
-    group = meta.key?(:execution_result) ? meta[:example_group] : meta[:parent_example_group]
-    while group
-      chain << group
-      group = group[:parent_example_group]
-    end
-    chain.filter_map { _1[:known_failure] }.uniq.reduce({}) { |all, own| all.merge(own) }
-  end
-
   def validate(meta)
     env = meta[:env]
     unless env.nil? || Devices.known?(env)
@@ -100,7 +72,10 @@ module Metadata
       raise ArgumentError, "#{meta[:location]}: an example outside a group with an env: (or General.describe)"
     end
 
-    [*Array(meta[:only_on]), *meta[:known_failure]&.keys&.flat_map { Array(_1) }].each do |e|
+    %i[known_failure pending].each do |key|
+      raise ArgumentError, "#{meta[:location]}: no #{key}: here; a failing example fails" if meta.key?(key)
+    end
+    Array(meta[:only_on]).each do |e|
       raise ArgumentError, "#{meta[:location]}: #{e.inspect} is no device devices.rb knows" unless Devices.known?(e)
     end
     unknown = [*Array(meta[:needs]), *meta[:skip_if]] - Devices::Device::FEATURES

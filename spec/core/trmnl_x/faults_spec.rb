@@ -30,8 +30,7 @@ RSpec.describe "Faults on the TRMNL X", env: "TRMNL_X" do
     # bl_init() restarts the device when the IQS323 task fails to initialize, on every
     # boot: a device whose touch controller died boot-loops (never reaching the server,
     # draining the battery) instead of carrying on without its touch bar.
-    it "keeps running with the touch controller absent",
-       pending: "bl_init() restarts when the IQS323 task fails to initialize (bl.cpp:815-823): it boot-loops" do
+    it "keeps running with the touch controller absent" do
       dev.boot(faults: { i2c_absent: [touch_bar] }) do |s|
         dev.mock.wait_for_request("/api/display", timeout: 15)
         expect(s.status["boot_count"]).to be < 3

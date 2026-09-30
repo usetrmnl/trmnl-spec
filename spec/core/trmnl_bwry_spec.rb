@@ -90,11 +90,9 @@ RSpec.describe "TRMNL BWRY", env: "trmnl_4clr" do
     # display_show_image hands an uncompressed 1-bit BMP to the driver as the frame buffer; on
     # the 4-color panel writePlane reads it as 2 bits per pixel, 48 KB past the end of the 48 KB
     # buffer.
-    it "does not send a 1bit bmp as a 2bit plane",
-       pending: "display_show_image() sends a 1-bit BMP as the BWRY's 2-bit plane (src/display.cpp:1829)" do
+    it "does not send a 1bit bmp as a 2bit plane" do
       TrmnlSim::MockTrmnl.open do |mock|
-        sim(Builds.for_env("trmnl_4clr"), erase: true, memcheck: "log", memcheck_suppress: FirmwareBugs::SNTP_USE_AFTER_FREE,
-                                          extra_args: ["--offline"]) do |s|
+        sim(Builds.for_env("trmnl_4clr"), erase: true, memcheck: "log", extra_args: ["--offline"]) do |s|
           mock.display = { image: "default", refresh_rate: 300 } # the OG's BMP
           s.wait(portal: true, timeout: 90)
           s.portal_connect("TRMNL-Sim", "password", server: mock.device_url)

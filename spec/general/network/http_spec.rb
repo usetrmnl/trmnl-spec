@@ -36,7 +36,7 @@ General.describe "HTTP" do
       asleep { |s| expect(refresh(s).count("/api/display")).to eq(2) }
     end
 
-    it "image redirect", known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "image redirect" do
       m = dev.mock
       path, seven = device_image(m, "seven", panel_number("7"))
       moved = path.gsub("seven", "moved")
@@ -53,7 +53,7 @@ General.describe "HTTP" do
   describe "NoContentLength" do
     before { dev.reset }
 
-    it "chunked image", known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "chunked image" do
       m = dev.mock
       path, eight = device_image(m, "eight", panel_number("8"))
       m.display = { image: "eight", refresh_rate: 300 }
@@ -127,9 +127,7 @@ General.describe "HTTP" do
       onboard_with_logo_redirect(absolute: true)
     end
 
-    it "setup logo redirect to a relative location",
-       pending: "DeviceSetup::downloadSetupImage follows a redirect without resolving a relative Location " \
-                "(device_setup.cpp:142)" do
+    it "setup logo redirect to a relative location" do
       # DeviceSetup::downloadSetupImage follows a 307/308 with begin(getLocation()), without
       # resolving a relative Location against the image URL (HttpRetryRequest does, with
       # resolveRedirectLocation): the second GET fails and onboarding reports an error.

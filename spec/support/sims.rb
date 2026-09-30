@@ -15,8 +15,7 @@ module Sims
   # its equivalent (see TrmnlX::XSim). With a block: yields it and closes it afterwards (see
   # TrmnlSim::Simulator#session), returning the block's value.
   def start(build, **kw, &block)
-    kw = { name: current_name, mac: Builds::TEST_MAC, turbo: Builds::TURBO, memcheck: Builds::MEMCHECK,
-           memcheck_suppress: FirmwareBugs::KNOWN_MEMORY_BUGS }.merge(kw)
+    kw = { name: current_name, mac: Builds::TEST_MAC, turbo: Builds::TURBO, memcheck: Builds::MEMCHECK }.merge(kw)
     s = if Builds.device_of(build)&.env == "TRMNL_X"
           TrmnlX.general_sim(build, **kw)
         else

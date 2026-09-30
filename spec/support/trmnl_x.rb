@@ -23,8 +23,7 @@ module TrmnlX
 
   # A simulated X (offline, with the X's MAC). With a block: yields it and closes it.
   def sim(**kw, &block)
-    kw = { name: Sims.current_name, mac: MAC, turbo: Builds::TURBO, memcheck: Builds::MEMCHECK,
-           memcheck_suppress: FirmwareBugs::KNOWN_MEMORY_BUGS }.merge(kw)
+    kw = { name: Sims.current_name, mac: MAC, turbo: Builds::TURBO, memcheck: Builds::MEMCHECK }.merge(kw)
     extra = kw.delete(:extra_args).to_a
     extra += ["--offline"] unless extra.include?("--offline")
     s = TrmnlSim::Simulator.new(build, extra_args: extra, **kw)

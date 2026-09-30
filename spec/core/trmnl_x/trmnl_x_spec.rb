@@ -246,9 +246,7 @@ RSpec.describe "TRMNL X", env: "TRMNL_X" do
     # light-sleep timer that is never disarmed. enter_shipment_sleep() only adds the
     # charger's GPIO wakeup, so the device wakes about every 1.2 s ("Unexpected wakeup
     # cause: 4") instead of sleeping until it is docked, draining the battery in the box.
-    it "shipment mode after the timeout stays asleep",
-       pending: "the setup screen's display_sleep(1000) light-sleep timer is never disarmed: " \
-                "shipment mode wakes every 1.2 s" do
+    it "shipment mode after the timeout stays asleep" do
       shipped.boot do |s|
         c = time_out(s)
         t0 = s.status["sim_time_s"]

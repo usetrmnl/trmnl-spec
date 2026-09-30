@@ -2,28 +2,6 @@
 
 # A factory-fresh device: WiFi setup screen, captive portal, onboarding.
 
-# Firmware layout bug on panels smaller than 800x480: display_show_msg() puts the screens'
-# texts at the OG's fixed coordinates (the version line at (40, 48) next to the QR code at
-# width - 106, the portal texts at y 386 and 340) and centres lines wider than the panel.
-small_panel = "display_show_msg() lays the screen out for 800x480 (display.cpp:2796-2813, 2559, 2225-2243): " \
-              "texts off the bottom, cut off at the sides, the version line under the QR code"
-# ...and on the parallel (FastEPD) boards smaller than the TRMNL X: the X's Inter_18 font
-# (display.cpp:2759-2760) and 2x logo, with the texts at X offsets from the bottom.
-parallel_small_panel = "display_show_msg() uses the TRMNL X's Inter_18 font and big logo on every parallel panel " \
-                       "(display.cpp:2759-2760, 2805, 2561, 2232): at 960x540 lines run off the sides and over the " \
-                       "logo"
-# Firmware bug on the ESP32-C5: WifiCaptive::getAPSSID() names the setup network after bytes 3-5
-# of ESP.getEfuseMac(), but on chips with 802.15.4 esp_efuse_mac_get_default() returns the
-# 8-byte EUI-64 OUI:FF:FE:NIC, so those bytes are FF FE and the NIC's first byte.
-c5_ap_name = "WifiCaptive.cpp:27-30 takes the AP name from bytes 3-5 of the C5's EUI-64 factory MAC (FF FE + one " \
-             "NIC byte): every gen-2 device's setup network is TRMNL-FFFExx instead of the MAC's last three bytes"
-panel_layout = { %w[CrowPanel42 m5_paper_color] => small_panel,
-                 %w[TRMNL_X_PAPERS3 TRMNL_X_LILYGO_T5PRO] => parallel_small_panel,
-                 "WAVESHARE_397" => FirmwareBugs::EP397_ROW_SHIFT }
-# the setup screen (with the AP's name) / the portal's timeout message
-setup_screen_failures = panel_layout.merge(%w[trmnl_gen2 trmnl_gen2_4clr] => c5_ap_name)
-timed_out_failures = panel_layout.merge("seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON)
-
 General.describe "Setup mode" do
   # Where the screens' texts are (display_show_msg in the firmware's display.cpp): the version
   # line at (40, 48) left of the top-right QR code, the portal's texts at fixed heights; centred.
@@ -41,13 +19,13 @@ General.describe "Setup mode" do
   describe "FreshDevice" do
     fixture(:setup_sim) { fresh_device(settled: { display_idle: true, min_refreshes: 1, settle_ms: 500 }) }
 
-    it "shows the setup screen", known_failure: setup_screen_failures do
+    it "shows the setup screen" do
       # All but the "TRMNL firmware <version> (<git hash>)" line, which changes every commit.
       expect(setup_sim).to match_golden("setup_screen_body.png", region: region(:body))
       expect(setup_sim).to match_golden("setup_screen_top_right.png", region: region(:top_right))
     end
 
-    it "setup screen names the access point", :smoke, known_failure: setup_screen_failures do
+    it "setup screen names the access point", :smoke do
       # Just the "Connect ... to TRMNL-XXXXXX" line, so version bumps don't break it.
       expect(setup_sim).to match_golden("setup_ssid_line.png", region: region(:ssid_line))
     end
@@ -69,7 +47,7 @@ General.describe "Setup mode" do
   describe "PortalTimeout",
            skip_if: :shipment,
            why: "the portal times out back into shipment mode (core/trmnl_x/trmnl_x_spec PortalTimeout)" do
-    it "unattended portal times out and sleeps", known_failure: timed_out_failures do
+    it "unattended portal times out and sleeps" do
       fresh_device do |s|
         s.set_portal_client(false) # nobody joins, so turbo can run to the timeout
         # (a slow panel is still showing the message when the chip sleeps)

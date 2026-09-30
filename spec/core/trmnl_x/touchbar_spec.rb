@@ -166,8 +166,7 @@ RSpec.describe "TRMNL X touch bar", env: "TRMNL_X" do
     # coordinate is 0xFFFF, so read_gesture_event() clears the TAP before
     # check_channel_states() runs, and the tap is handled as a plain wake (a refresh)
     # with no "... button pressed" or indicator.
-    it "taps", pending: "a waking tap's slider coordinate is 0xFFFF, so read_gesture_event() clears the TAP: " \
-                        "handled as a plain wake" do
+    it "taps" do
       boot_two_images("slide") do |s|
         { "left" => "Back button pressed", "center" => "Middle button pressed",
           "right" => "Next button pressed" }.each do |zone, line|

@@ -4,30 +4,6 @@
 # and a double click (or a 1-5 s press) of the button runs it on the next wake. Also the
 # /api/display status codes and actions around it.
 
-# Firmware bug: classify_button_presses() (button.cpp:62-92) times a press from when it starts
-# reading the button, not from the wake. If the first click is still held then (the firmware took
-# longer to boot than usual) but released within 50 ms, it is NoAction and the second click is
-# never waited for.
-slow_boot_click = "button.cpp:84-92: a first click still held when classify_button_presses() starts reading (here " \
-                  "~50 ms after the wake) but released within 50 ms counts as NoAction; the double click is lost"
-
-# The sleep special function keeps the screen only where it isn't a BMP (see "sleep keeps the
-# screen"): BMPs aren't cached under their filename.
-bmp_not_cached = "sleep: status=false/HTTPS_SUCCESS takes the cached-image path (bl.cpp:1478), but BMPs are only " \
-                 "saved as /current.bmp: \"Cached image is empty or unreadable\", an error log and message"
-
-# The XIAO C3's button never wakes it: every group that presses it fails there.
-xiao_c3 = { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON }
-wiper_images = { "CrowPanel42" => FirmwareBugs::ONE_BIT_PNG_PANEL_TYPE, "WAVESHARE_397" => FirmwareBugs::EP397_ROW_SHIFT,
-                 "trmnl_gen2_4clr" => FirmwareBugs::GEN2_4CLR_IMAGE }
-lost_double_click = {
-  %w[CrowPanel42 seeed_reTerminal_E1002 seeed_xiao_esp32s3 TRMNL_7inch5_OG_DIY_Kit TRMNL_7inch5_OG_DIY_Kit_3CLR
-     TRMNL_7inch5_OG_DIY_Kit_6CLR TRMNL_4inch26_DIY_Kit seeed_reTerminal_E1001 seeed_sticky WAVESHARE_397
-     m5_paper_mono seeed_reTerminal_E1004] => slow_boot_click
-}
-# Every device whose server default image is a BMP.
-bmp_screens = { Devices::ALL.select(&:default_bmp?).map(&:env) => bmp_not_cached }
-
 General.describe "Special functions" do
   fixture(:dev) { ProvisionedDevice.new(build) }
 
@@ -72,8 +48,8 @@ General.describe "Special functions" do
     end
   end
 
-  describe "SpecialFunctions", known_failure: xiao_c3, needs: %i[double_click button] do # runs the special function
-    it "identify shows the identify image", :smoke, known_failure: xiao_c3.merge(FirmwareBugs::WRONG_IMAGES) do
+  describe "SpecialFunctions", needs: %i[double_click button] do # runs the special function
+    it "identify shows the identify image", :smoke do
       run_to_image("identify", { action: "identify", refresh_rate: 300 }, "seven", "7")
     end
 
@@ -82,7 +58,7 @@ General.describe "Special functions" do
       expect(st["wake_at_s"] - st["sim_time_s"]).to be_within(30).of(1800)
     end
 
-    it "sleep keeps the screen", known_failure: xiao_c3.merge(bmp_screens) do
+    it "sleep keeps the screen" do
       # Where the server's default image is a BMP (see bmp_screens), like send_to_me (see there):
       # status=false/HTTPS_SUCCESS makes the OG look for the answer's image in a cache it doesn't
       # have, then report and show an error.
@@ -117,7 +93,7 @@ General.describe "Special functions" do
       end
     end
 
-    it "restart playlist shows the first item", known_failure: xiao_c3.merge(FirmwareBugs::WRONG_IMAGES) do
+    it "restart playlist shows the first item" do
       run_to_image("restart_playlist", { action: "restart_playlist", refresh_rate: 300 }, "one", "1")
     end
 
@@ -129,9 +105,7 @@ General.describe "Special functions" do
     # it looks for /current.bmp or /current.png (bl.cpp:2073), but PNGs are only saved under
     # their filename (bl.cpp:1616-1618 writes nothing but /current.bmp), so it finds "No current
     # image!" and shows an error instead.
-    it "send to me keeps the current image",
-       pending: "send_to_me finds no cached image (BMPs aren't cached by name, PNGs not as /current.*, " \
-                "bl.cpp:2073): an error log and message" do
+    it "send to me keeps the current image" do
       _, two = device_image(dev.mock, "two", device_number("2"))
       dev.boot do |s|
         assign(s, "send_to_me", image: "two")
@@ -142,8 +116,7 @@ General.describe "Special functions" do
       end
     end
 
-    it "guest mode shows the guest image for its refresh rate",
-       known_failure: xiao_c3.merge(FirmwareBugs::WRONG_IMAGES) do
+    it "guest mode shows the guest image for its refresh rate" do
       st = run_to_image("guest_mode", { action: "guest_mode", refresh_rate: 1200 }, "three", "3")
       expect(st["wake_at_s"] - st["sim_time_s"]).to be_within(30).of(1200)
     end
@@ -151,8 +124,7 @@ General.describe "Special functions" do
     # Rewind shows /last.bmp or /last.png, which no firmware code writes: it reads the missing
     # /last.png (display_read_file returns NULL), pretends it decoded
     # ("image_proccess_response = PNG_NO_ERR; // DEBUG") and passes NULL to display_show_image.
-    it "rewind without a previous image does not crash",
-       pending: "rewind passes the NULL of a missing /last.png to display_show_image (PNG_NO_ERR // DEBUG)" do
+    it "rewind without a previous image does not crash" do
       dev.boot do |s|
         assign(s, "rewind")
         run_function(s, { image: "default", action: "rewind", refresh_rate: 300 })
@@ -163,7 +135,7 @@ General.describe "Special functions" do
     end
   end
 
-  describe "Identify", known_failure: xiao_c3, needs: %i[double_click button] do # runs the special function
+  describe "Identify", needs: %i[double_click button] do # runs the special function
     %w[identify restart_playlist guest_mode].each do |function|
       it "#{function.tr('_', ' ')} with the empty state image" do
         run_to_sleep(function, { image: "default", filename: "empty_state", action: function, refresh_rate: 300 })
@@ -244,7 +216,7 @@ General.describe "Special functions" do
 
     wiper = "the wiper runs 100 full refreshes; about 3.5 minutes on the TRMNL X"
 
-    it "screen wiper clears then shows the next item", known_failure: wiper_images, slow: wiper do
+    it "screen wiper clears then shows the next item", slow: wiper do
       path, four = device_image(dev.mock, "four", device_number("4"))
       dev.mock.display_queue << { image: "default", filename: "screen_wiper.png", refresh_rate: 300 }
       dev.mock.display = { image: "four", refresh_rate: 300 }
@@ -264,9 +236,8 @@ General.describe "Special functions" do
     end
   end
 
-  describe "Buttons", known_failure: xiao_c3, needs: :button do
-    it "double click runs the special function", known_failure: xiao_c3.merge(lost_double_click),
-                                                 needs: :double_click do
+  describe "Buttons", needs: :button do
+    it "double click runs the special function", needs: :double_click do
       dev.boot do |s|
         assign(s, "sleep")
         dev.mock.display = { image: "default", action: "sleep", refresh_rate: 1800 }

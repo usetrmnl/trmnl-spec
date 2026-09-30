@@ -2,16 +2,13 @@
 
 # A provisioned device talking to a mock TRMNL server: images, sleep, wake sources, headers.
 
-x4_battery = "device_list[] (display.cpp:51) gives the X4 batt_pin 0xff though its divider is on GPIO0 " \
-             "(config.h:117), so it always reports 0 V"
-
 General.describe "Refresh cycle" do
   fixture(:dev) { ProvisionedDevice.new(build) }
 
   describe "RefreshCycle" do
     before { dev.reset }
 
-    it "renders the image exactly", :smoke, known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "renders the image exactly", :smoke do
       path, expected = device_image(dev.mock, "one", device_number("1"))
       dev.mock.display = { image: "one", refresh_rate: 300 }
       dev.boot do |s|
@@ -29,7 +26,7 @@ General.describe "Refresh cycle" do
       end
     end
 
-    it "fetches the next image on a timer wake", :smoke, known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "fetches the next image on a timer wake", :smoke do
       _, expected = device_image(dev.mock, "two", device_number("2"))
       dev.mock.display = { image: "two", refresh_rate: 300 }
       dev.boot_asleep do |s|
@@ -42,7 +39,7 @@ General.describe "Refresh cycle" do
     end
 
     it "wakes and refreshes on a button press", :smoke,
-       known_failure: { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON }, needs: :button do
+       needs: :button do
       dev.boot_asleep do |s|
         s.wait_for_deep_sleep
         req = dev.mock.next_request("/api/display", timeout: 90) { s.press(150) }
@@ -51,7 +48,7 @@ General.describe "Refresh cycle" do
       end
     end
 
-    it "reports the battery voltage", :smoke, known_failure: { "xteink_x4" => x4_battery } do
+    it "reports the battery voltage", :smoke do
       dev.boot_asleep do |s|
         s.set_battery(3700)
         s.wait_for_deep_sleep
@@ -104,8 +101,7 @@ General.describe "Refresh cycle" do
       end
     end
 
-    it "resets WiFi on a long press", known_failure: { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON },
-                                      needs: :button do
+    it "resets WiFi on a long press", needs: :button do
       dev.boot_asleep do |s|
         s.wait_for_deep_sleep
         s.press(6000)
@@ -114,7 +110,7 @@ General.describe "Refresh cycle" do
     end
 
     it "forgets the device on the portal's soft reset",
-       known_failure: { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON }, needs: :button do
+       needs: :button do
       # A long press only forgets WiFi; the portal's Soft Reset also clears the API key, so the
       # next onboarding has to register with /api/setup again.
       dev.boot_asleep do |s|

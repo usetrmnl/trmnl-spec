@@ -8,22 +8,12 @@ require "tmpdir"
 # GPIO 25/24; the simulator's dock switch plugs the USB cable in. The C5's own radio does
 # 2.4 and 5 GHz. Groups whose build is missing skip.
 
-# FIRMWARE BUG: the trmnl_gen2_4clr env defines BOARD_TRMNL_GEN2 but not BOARD_TRMNL_4CLR, which
-# display.cpp's 4-color image path (png_draw_4clr, 2 bits per pixel into DTM1) is compiled under.
-# Images therefore take the generic path: two 1-bit planes of 48000 bytes (DTM2, then DTM1). The
-# BWRY panel reads DTM1 as 2 bits per pixel, so only the top half of the screen changes, in the
-# wrong inks, and the rest keeps the old picture (color PNGs and 1-bit images alike). The setup
-# and message screens, drawn through bb_epaper's 4-color buffer, are fine.
-gen2_bwry_images = FirmwareBugs::GEN2_4CLR_IMAGE
-
 RSpec.describe "OG gen 2" do
   # What both gen-2 boards get: the BYOD board tests (identity, the served image; see
-  # spec/support/byod.rb) and more. `images_work`: served images show as they should (see
-  # OgGen2Bwry for the board where they don't).
-  shared_examples "a gen-2 board" do |images_work: true|
+  # spec/support/byod.rb) and more.
+  shared_examples "a gen-2 board" do
     gen2 = Devices.fetch(metadata[:env])
-    byod_board name: gen2.name, model: gen2.model, size: gen2.size, battery_v: gen2.battery_v, inks: gen2.inks,
-               pending: images_work ? {} : { "shows the served image" => gen2_bwry_images }
+    byod_board name: gen2.name, model: gen2.model, size: gen2.size, battery_v: gen2.battery_v, inks: gen2.inks
     let(:gen2_build) { Builds.for_env(gen2.env) }
 
     # Wake the sleeping device (timer, or the block); return its /api/display request once it
@@ -106,7 +96,7 @@ RSpec.describe "OG gen 2" do
           expect(req).to have_header("USB-Connected", "true")
           expect(m.paths).not_to include("/api/setup")
           expect(m.paths).to include(board.inks == "bwry" ? "/images/second.png" : "/images/second.bmp")
-          expect(s).to show_image(second, tolerance: 16, max_ratio: 0.001) if images_work
+          expect(s).to show_image(second, tolerance: 16, max_ratio: 0.001)
         end
       end
     end
@@ -172,8 +162,7 @@ RSpec.describe "OG gen 2" do
     include_examples "a gen-2 board"
 
     it "memchecks onboarding and refresh cycles" do
-      # The heap checker follows the C5's IDF 5.5 heap and its single-core FreeRTOS tasks
-      # (known firmware bugs suppressed, see FirmwareBugs::KNOWN_MEMORY_BUGS).
+      # The heap checker follows the C5's IDF 5.5 heap and its single-core FreeRTOS tasks.
       TrmnlSim::MockTrmnl.open do |mock|
         sim(gen2_build, erase: true, memcheck: "halt", extra_args: ["--offline"]) do |s|
           mock.set_image("one", TrmnlSim::Images.big_number("1"))
@@ -207,11 +196,10 @@ RSpec.describe "OG gen 2" do
     end
   end
 
-  # FIRMWARE BUG (see gen2_bwry_images above): served images don't show on this board.
   describe "OgGen2Bwry", env: "trmnl_gen2_4clr" do
-    include_examples "a gen-2 board", images_work: false
+    include_examples "a gen-2 board"
 
-    it "renders a color png in four colors", pending: gen2_bwry_images do
+    it "renders a color png in four colors" do
       m = dev.mock
       expected = m.set_color_png("bars", TrmnlSim::Images.color_bars)
       m.display = { image: "bars", refresh_rate: 300 }

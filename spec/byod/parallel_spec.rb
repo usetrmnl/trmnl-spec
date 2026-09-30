@@ -14,21 +14,6 @@ ramp16 = ->(w) { ->(x, _y) { [15, x * 16 / w].min } }
 # A blank 4x120 px strip: the margin either side of centred text.
 paper = images.expected_gray(->(_x, _y) { 1 }, 4, 120)
 
-# Firmware bug: display_show_msg2(WIFI_CONNECT) uses the TRMNL X's big font on every
-# PARALLEL_EPD board and centres 'Connect your phone or computer to "TRMNL-XXXXXX" Wi-Fi' with
-# (width - text width) / 2, which goes negative on a 960 px panel: the line starts at the left
-# edge and is cut off after "Wi" at the right.
-setup_text = "display_show_msg2(WIFI_CONNECT) centres the X's big-font instructions with (width - text width) / 2, " \
-             "negative on a 960 px panel: the line starts at the left edge and is cut off at the right"
-
-# FIRMWARE BUG (FastEPD 8dc8c74, the version TRMNL_X_SENSORIAC5 pins): bbepIOInit enables the
-# PARLIO TX unit (parlio_tx_unit_enable) and bbepIODeInit, called on the way to deep sleep,
-# deletes it without parlio_tx_unit_disable. IDF 5.5's parlio_del_tx_unit only deletes a unit in
-# the INIT state, returns ESP_ERR_INVALID_STATE, and FastEPD's ESP_ERROR_CHECK aborts: the device
-# reboots after every refresh instead of sleeping.
-sensoria_sleep = "FastEPD 8dc8c74's bbepIODeInit deletes the enabled PARLIO TX unit without disabling it: " \
-                 "ESP_ERROR_CHECK aborts and the device reboots instead of sleeping"
-
 RSpec.describe "BYOD parallel boards" do
   shared_examples "a parallel board" do
     it "shows 16 grays" do
@@ -42,7 +27,7 @@ RSpec.describe "BYOD parallel boards" do
       end
     end
 
-    it "setup screen text fits the panel", pending: setup_text do
+    it "setup screen text fits the panel" do
       sim(Builds.for_env(board.env), erase: true, extra_args: ["--offline"]) do |s|
         s.wait(portal: true, timeout: 90)
         s.wait(display_idle: true, timeout: 30)
@@ -142,7 +127,7 @@ RSpec.describe "BYOD parallel boards" do
       end
     end
 
-    it "sleeps after a refresh", pending: sensoria_sleep do
+    it "sleeps after a refresh" do
       TrmnlSim::MockTrmnl.open do |mock|
         fresh_c5 do |s|
           onboard(s, mock)

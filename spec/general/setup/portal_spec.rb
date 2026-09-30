@@ -7,15 +7,6 @@ require "net/http"
 # settings page, the advanced join options (static IP, WPA2 Enterprise, NTP server, hostname) and
 # several saved networks.
 
-# Firmware bug on the gen-2 boards (ESP32-C5): ClockGen2::waitForSync() (clock_gen2.cpp:9-11)
-# waits for NTP with no timeout. With a static IP on a subnet that doesn't reach the network (as
-# here: 192.168.4.50 behind the simulated AP), it never gets the time and never sleeps.
-c5_ntp_forever = { %w[trmnl_gen2 trmnl_gen2_4clr] =>
-                     "clock_gen2.cpp:9-11: waitForSync() loops until NTP sets the clock, with no timeout; " \
-                     "unreachable NTP (this static IP's subnet) keeps the device awake forever" }
-# The XIAO C3's button never wakes it (add_network() wakes it with a press).
-xiao_c3_button = { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON }
-
 General.describe "Portal" do
   fixture(:dev) { ProvisionedDevice.new(build) }
 
@@ -121,7 +112,7 @@ General.describe "Portal" do
       end
     end
 
-    it "static ip", known_failure: c5_ntp_forever do
+    it "static ip" do
       join(useStaticIP: true, staticIP: "192.168.4.50", gateway: "192.168.4.1", subnet: "255.255.255.0",
            dns1: "1.1.1.1", dns2: "8.8.8.8") do |s|
         s.wait_for_console(/Static IP configured/, timeout: 90)
@@ -129,7 +120,7 @@ General.describe "Portal" do
       end
     end
 
-    it "static ip with defaults", known_failure: c5_ntp_forever do
+    it "static ip with defaults" do
       join(useStaticIP: true, staticIP: "192.168.4.50") do |s|
         s.wait_for_console(/Static IP configured/, timeout: 90)
         s.wait_for_deep_sleep(timeout: 180)
@@ -237,7 +228,7 @@ General.describe "Portal" do
     end
 
     # add_network: the add_wifi special function
-    it "second network is used when the first is gone", known_failure: xiao_c3_button, needs: %i[double_click button] do
+    it "second network is used when the first is gone", needs: %i[double_click button] do
       nets = [{ ssid: "TRMNL-Sim" }, { ssid: "Office", password: "office-pass", rssi: -60 }]
       dev.boot_asleep(networks: nets) do |s|
         s.wait_for_deep_sleep
@@ -256,8 +247,7 @@ General.describe "Portal" do
     end
 
     # add_network: the add_wifi special function
-    it "joining a saved network again is not saved twice", known_failure: xiao_c3_button,
-                                                           needs: %i[double_click button] do
+    it "joining a saved network again is not saved twice", needs: %i[double_click button] do
       dev.boot_asleep do |s|
         s.wait_for_deep_sleep
         add_network(s)
@@ -269,7 +259,7 @@ General.describe "Portal" do
     end
 
     # add_network: the add_wifi special function
-    it "portal lists saved networks out of range", known_failure: xiao_c3_button, needs: %i[double_click button] do
+    it "portal lists saved networks out of range", needs: %i[double_click button] do
       dev.boot_asleep do |s|
         s.wait_for_deep_sleep
         add_network(s)

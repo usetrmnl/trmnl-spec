@@ -66,7 +66,7 @@ General.describe "Save points" do
       end
     end
 
-    it "timer wake refreshes without onboarding", :smoke, known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "timer wake refreshes without onboarding", :smoke do
       restored do |s|
         req = dev.mock.next_request("/api/display", timeout: 120) { s.wake }
         expect(req).to have_header("Access-Token", dev.mock.api_key)
@@ -78,8 +78,7 @@ General.describe "Save points" do
       end
     end
 
-    it "button wakes a restored device", known_failure: { "seeed_xiao_esp32c3" => FirmwareBugs::XIAO_C3_BUTTON },
-                                         needs: :button do
+    it "button wakes a restored device", needs: :button do
       restored do |s|
         req = dev.mock.next_request("/api/display", timeout: 120) { s.press(150) }
         expect(req).to have_header("Update-Source", device.button_source)
@@ -87,7 +86,7 @@ General.describe "Save points" do
       end
     end
 
-    it "in memory slot goes back in time", known_failure: FirmwareBugs::WRONG_IMAGES do
+    it "in memory slot goes back in time" do
       restored do |s|
         slot = s.save_point
         expect(s.save_points.map { _1["id"] }).to eq([slot["id"]])

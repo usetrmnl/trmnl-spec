@@ -63,9 +63,9 @@ RSpec.describe "TRMNL X memcheck", env: "TRMNL_X" do
   describe "MemcheckXBmp" do
     # display_show_image flips an uncompressed BMP with the panel's dimensions: an 800x480 BMP
     # (48 KB) is flipped as 1872x1404, far past the end of its buffer.
-    it "flips a bmp image within its buffer", pending: FirmwareBugs::BMP_FLIP_OVERFLOW do
+    it "flips a bmp image within its buffer" do
       TrmnlSim::MockTrmnl.open do |mock|
-        shipped_x.boot(memcheck: "log", memcheck_suppress: FirmwareBugs::SNTP_USE_AFTER_FREE) do |s|
+        shipped_x.boot(memcheck: "log") do |s|
           mock.display = { image: "default", refresh_rate: 300 } # the OG's BMP
           TrmnlX.onboard(s, mock, TrmnlX::SSID_24)
           s.assert_no_memory_errors

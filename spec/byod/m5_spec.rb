@@ -9,21 +9,10 @@
 rgb = TrmnlSim::Images::SPECTRA6_RGB
 inks = rgb.keys # black, white, yellow, red, blue, green
 
-# Firmware bug: for a 1-bit PNG display_show_image() calls
-# bbep.setPanelType(dpList[panel_set][iTempProfile].OneBit), but for this board dpList holds
-# bb_epaper *product* IDs meant for bbep.begin() (EPD_M5_PAPER_MONO = 30), not panel types. 30 is
-# a valid panel index, EP266YR_184x360 (a UC81xx 4-color panel), so the image is written and
-# "refreshed" with UC81xx commands the SSD1677 doesn't understand (its DRF 0x12 is the SSD1677's
-# SW reset) and the old screen stays up. 2-bit images take the bbep.begin() path and work
-# ("four grays").
-m5_mono_png = "display_show_image() passes dpList's bb_epaper product 30 (EPD_M5_PAPER_MONO) to " \
-              "bbep.setPanelType() for 1-bit PNGs: panel 30 is a UC81xx panel, the SSD1677 ignores its commands"
-
 RSpec.describe "BYOD bb_epaper boards" do
   describe "M5PaperMono", env: "m5_paper_mono" do
     byod_board name: "M5Paper Mono", model: "m5_paper_mono",
-               battery_v: 4.2, # BATT_NONE
-               pending: { "shows the served image" => m5_mono_png }
+               battery_v: 4.2 # BATT_NONE
 
     # A 2-bit PNG: bb_epaper's 4-gray mode (EPD_M5_PAPER_MONO_4GRAY, a waveform in the LUT
     # register) gives black, two grays and white.
@@ -74,14 +63,13 @@ RSpec.describe "BYOD bb_epaper boards" do
     # heap's free-block headers get overwritten (with 0x11, white Spectra pixels) and the device
     # panics in HttpRetryRequest::releaseBody -> free(), then reboots, fetches the same image and
     # crashes again. Whether it crashes depends on the heap layout, so this example catches the
-    # overflow with --memcheck. (The E1002 skips writePlane for BMPs; flip_image is a known bug on
-    # the X too, see FirmwareBugs::KNOWN_MEMORY_BUGS.)
-    it "takes an 800x480 bmp", pending: FirmwareBugs::BMP_FLIP_OVERFLOW do
+    # overflow with --memcheck. (The E1002 skips writePlane for BMPs; the X's flip_image overflows
+    # the same way, see core/trmnl_x/memcheck_spec.rb.)
+    it "takes an 800x480 bmp" do
       m = dev.mock
       m.set_image("bmp") { |x, y| ((x / 40) + (y / 40)).even? }
       m.display = { image: "bmp", refresh_rate: 300 }
-      others = FirmwareBugs::KNOWN_MEMORY_BUGS - ["_Z10flip_imagePhiib"]
-      dev.boot_asleep(memcheck: "log", memcheck_suppress: others) do |s|
+      dev.boot_asleep(memcheck: "log") do |s|
         wait_until_asleep(s)
         refresh(s, "/images/bmp.bmp")
         expect(s.log).not_to include("Guru Meditation")

@@ -5,8 +5,8 @@
 #
 # General tests (General.describe: setup, portal, WiFi, HTTP, errors, faults...) run on every
 # device the run covers (ENVS, see Selection). They read what they need to know about it from its
-# `Device` (panel size, inks, button, battery...), skip what doesn't apply (`needs:`, `only_on:`
-# metadata), and `known_failure:` metadata marks what a device's firmware gets wrong.
+# `Device` (panel size, inks, button, battery...) and skip what doesn't apply (`needs:`, `only_on:`
+# metadata).
 module Devices
   class Device
     ATTRIBUTES = {

@@ -6,9 +6,8 @@
 #
 #   RSpec.describe "BYOD SSD16xx boards" do
 #     describe "Waveshare397", env: "WAVESHARE_397" do        # left out unless ENVS lists it
-#       byod_board name: "Waveshare ESP32-S3 3.97\"", model: "waveshare_397",
-#                  pending: { "shows the served image" => row_bug }
-#       it_behaves_like "an SSD16xx board", row_shift: 1
+#       byod_board name: "Waveshare ESP32-S3 3.97\"", model: "waveshare_397"
+#       it_behaves_like "an SSD16xx board"
 #
 #       it "reports the battery from the pmic" do
 #         dev.boot_asleep { |s| ... }
@@ -19,8 +18,7 @@
 # `byod_board` gives the group `board` (a Byod::Board: what the board should report and show),
 # a provisioned device `dev` (a group fixture), a mock reset before every example, the helpers
 # of Byod::Helpers (refresh, serve_test_image, ...) and the examples every board gets ("a BYOD
-# board"). `pending:` marks those of them the board's firmware gets wrong, by description.
-# Family shared examples do the same for theirs with `expected_failures`.
+# board").
 module Byod
   I = TrmnlSim::Images
 
@@ -70,7 +68,7 @@ module Byod
   # Example group macros (every group has them).
   module Macros
     # Make this group (which must have an `env:`) a BYOD board's: see the top of this file.
-    def byod_board(name:, model:, size: [800, 480], battery_v: 4.1, inks: "mono", png_default: false, pending: {})
+    def byod_board(name:, model:, size: [800, 480], battery_v: 4.1, inks: "mono", png_default: false)
       env = metadata[:env]
       raise ArgumentError, "#{metadata[:location]}: byod_board needs the group's env:" unless env.is_a?(String)
 
@@ -89,25 +87,7 @@ module Byod
 
       include Helpers
 
-      include_examples "a BYOD board", pending:
-    end
-
-    # The examples the block defines that `reasons` names (description => why) are expected to
-    # fail: they get `pending:` metadata, as if written `it "...", pending: why`. For shared
-    # examples whose failures depend on the including board. Naming an example the block doesn't
-    # define is an error.
-    def expected_failures(reasons)
-      reasons = reasons.transform_keys(&:to_s)
-      first = examples.size
-      yield
-      added = examples.drop(first)
-      unknown = reasons.keys - added.map(&:description)
-      raise ArgumentError, "#{metadata[:location]}: expected failures of no example: #{unknown}" if unknown.any?
-
-      added.each do |ex|
-        reason = reasons[ex.description]
-        ex.metadata[:pending] = reason if reason && !ex.metadata[:skip] && !ex.metadata[:pending]
-      end
+      include_examples "a BYOD board"
     end
   end
 
@@ -158,27 +138,25 @@ RSpec.configure { |config| config.extend Byod::Macros }
 
 # ---- the examples every board gets ---------------------------------------------------------------
 
-RSpec.shared_examples "a BYOD board" do |pending: {}|
-  expected_failures(pending) do
-    it "identifies itself" do
-      dev.boot_asleep do |s|
-        expect(s.status["board"]["name"]).to eq(board.name)
-        wait_until_asleep(s)
-        req = wake_request(s)
-        expect(req).to have_header("Model", board.model)
-        expect(req.headers.values_at("Width", "Height").map(&:to_i)).to eq(board.size)
-        expect(req).to have_header("Battery-Voltage", a_value_within(0.06).of(board.battery_v)) if board.battery_v
-        wait_until_asleep(s, timeout: 90)
-      end
+RSpec.shared_examples "a BYOD board" do
+  it "identifies itself" do
+    dev.boot_asleep do |s|
+      expect(s.status["board"]["name"]).to eq(board.name)
+      wait_until_asleep(s)
+      req = wake_request(s)
+      expect(req).to have_header("Model", board.model)
+      expect(req.headers.values_at("Width", "Height").map(&:to_i)).to eq(board.size)
+      expect(req).to have_header("Battery-Voltage", a_value_within(0.06).of(board.battery_v)) if board.battery_v
+      wait_until_asleep(s, timeout: 90)
     end
+  end
 
-    it "shows the served image" do
-      expected = serve_test_image
-      dev.boot_asleep do |s|
-        wait_until_asleep(s)
-        refresh(s, "/images/test.png")
-        expect(s).to show_image(expected, tolerance: 16, max_ratio: 0.001)
-      end
+  it "shows the served image" do
+    expected = serve_test_image
+    dev.boot_asleep do |s|
+      wait_until_asleep(s)
+      refresh(s, "/images/test.png")
+      expect(s).to show_image(expected, tolerance: 16, max_ratio: 0.001)
     end
   end
 end

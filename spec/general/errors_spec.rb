@@ -5,55 +5,6 @@ require "json"
 # Error handling on the device under test: the error screens (and their weak-WiFi variants),
 # quiet retries on timer wakes, /api/setup failures during onboarding, and factory QA.
 
-# Firmware bugs
-message_below_panel =
-  "firmware: display_show_msg() draws the error text at fixed rows from 340 down " \
-  "(src/display.cpp:2319 for API_UNABLE_TO_CONNECT), below the bottom of a 300-row panel: " \
-  "the error screen is the bare logo"
-unregistered_below_panel =
-  "firmware: display_show_msg() draws the 'MAC ... not registered' message from row 340 down " \
-  "(src/display.cpp:2737, MAC_NOT_REGISTERED), below the bottom of a 300-row panel"
-qa_results_below_panel =
-  "firmware: display_show_msg_qa() draws the voltages, temperatures and verdict at rows " \
-  "340/370/400 (src/display.cpp:2651, 2655, 2663), below the bottom of a 300-row panel"
-qa_1bpp_buffer_on_color_panel =
-  "firmware: display_show_msg_qa() copies startQA()'s white 1-bit buffer (src/qa.cpp:298-299) " \
-  "into the frame buffer with a 1-bpp size (src/display.cpp:2596, 2622), but a color panel's " \
-  "buffer has 2 (4-color) or 4 (Spectra 6) bits per pixel: the 0xFF bytes cover the top half " \
-  "(in red) or quarter of the screen, and the rest keeps the QA start screen (logo, " \
-  "'Starting QA test') under the results"
-qa_second_display_init =
-  "firmware: startQA() calls display_init() again before showing the results " \
-  "(src/qa.cpp:353, after qa.cpp:301); on FastEPD boards display_init() calls " \
-  "bbep.initPanel() (src/display.cpp:295), whose second esp_lcd_new_i80_bus() fails " \
-  "(ESP_ERR_NOT_FOUND: the S3's one i80 bus is taken) and ESP_ERROR_CHECK aborts: the device " \
-  "reboots into QA again"
-qa_panel_rev_breaks_spi =
-  "firmware: startQA() calls display_init() again before showing the results " \
-  "(src/qa.cpp:353); display_init() reads the panel ID by bit-banging the SPI pins " \
-  "(get_panel_rev(), src/display.cpp:197), and with Arduino 3 the peripheral manager then " \
-  "detaches the pins from the SPI bus and stops it, while SPIClass::begin() returns early " \
-  "(its bus is still set): nothing reaches the panel and the QA results never show"
-
-# the QA result screens
-qa_screens = {
-  "CrowPanel42" => qa_results_below_panel,
-  %w[trmnl_4clr seeed_reTerminal_E1002 trmnl_gen2_4clr TRMNL_7inch5_OG_DIY_Kit_6CLR] => qa_1bpp_buffer_on_color_panel,
-  "m5_paper_color" => "#{qa_1bpp_buffer_on_color_panel}; the result lines are wider than the 400-pixel panel, too",
-  "trmnl_gen2" => qa_panel_rev_breaks_spi,
-  "WAVESHARE_397" => FirmwareBugs::EP397_ROW_SHIFT,
-  "TRMNL_X_LILYGO_T5PRO" => qa_second_display_init
-}
-qa_fail_screen = qa_screens.merge(
-  # the verdict line (in qa_fail_details) runs into the start screen's text
-  "seeed_reTerminal_E1004" => qa_1bpp_buffer_on_color_panel,
-  "TRMNL_X_PAPERS3" => qa_second_display_init
-)
-unregistered = { "CrowPanel42" => unregistered_below_panel }
-# the /api/setup failures whose screen shows the server's logo
-setup_logo = { %w[xteink_x3 seeed_reTerminal_E1004] =>
-                 "the setup error screen shows the server's logo BMP, and #{FirmwareBugs::BMP_FLIP_OVERFLOW}" }
-
 # WIFI_CONNECTION_RSSI is -100: at or below it the device blames the WiFi signal.
 weak = [{ ssid: "TRMNL-Sim", rssi: -100 }]
 
@@ -107,8 +58,7 @@ General.describe "Errors" do
       boot_with_error
     end
 
-    it "image url that can't be fetched", known_failure: { "CrowPanel42" => message_below_panel,
-                                                           "WAVESHARE_397" => FirmwareBugs::EP397_ROW_SHIFT } do
+    it "image url that can't be fetched" do
       # HTTPClient refuses the URL, so the request never starts: HTTPS_UNABLE_TO_CONNECT.
       # The screen blames the API although it answered (only HTTP errors from the image
       # host get the "image download failed" screen).
@@ -133,9 +83,7 @@ General.describe "Errors" do
   describe "Retries" do
     before { dev.reset }
 
-    it "timer wakes retry quietly then show the error",
-       known_failure: { "CrowPanel42" => "#{message_below_panel}; the screen before it is the logo too " \
-                                         "(#{FirmwareBugs::ONE_BIT_PNG_PANEL_TYPE})" } do
+    it "timer wakes retry quietly then show the error" do
       dev.boot_asleep do |s|
         s.wait_for_deep_sleep
         screen = s.screenshot
@@ -204,7 +152,7 @@ General.describe "Errors" do
       end
     end
 
-    it "long unregistered message is wrapped", known_failure: unregistered do
+    it "long unregistered message is wrapped" do
       message = "Your device #{'is not yet registered with any account, ' * 3}" \
                 "visit https://usetrmnl.com/signup/with-a-very-long-link-that-cannot-be-wrapped-anywhere-at-all " \
                 "and enter Device ID SIMTST"
@@ -219,7 +167,7 @@ General.describe "Errors" do
       end
     end
 
-    it "unregistered message is centred", known_failure: unregistered do
+    it "unregistered message is centred" do
       # trmnl.app's "MAC ... not registered - send to support@trmnl.com to activate your TRMNL"
       # (issue #650: drawn from the left edge)
       mock.setup = nil
@@ -229,17 +177,17 @@ General.describe "Errors" do
       end
     end
 
-    it "setup server error", known_failure: setup_logo do
+    it "setup server error" do
       mock.set_fault("/api/setup", status: 500)
       onboard_and_sleep
     end
 
-    it "setup server error on weak wifi", known_failure: setup_logo do
+    it "setup server error on weak wifi" do
       mock.set_fault("/api/setup", status: 500)
       onboard_and_sleep(networks: weak)
     end
 
-    it "setup malformed json", known_failure: setup_logo do
+    it "setup malformed json" do
       mock.set_fault("/api/setup", body: '{"status": 200, "api_key": ')
       onboard_and_sleep
     end
@@ -274,7 +222,7 @@ General.describe "Errors" do
       expect(s.status["boot_count"]).to eq(1), "the device crashed"
     end
 
-    it "qa passes and the button continues to setup", known_failure: qa_screens, needs: :button do
+    it "qa passes and the button continues to setup", needs: :button do
       start_qa do |s|
         finish_qa(s)
         expect(s).to show_message("qa_pass.png", [300, 200, 200, 70])
@@ -292,7 +240,7 @@ General.describe "Errors" do
       end
     end
 
-    it "qa fails when the chip heats up", known_failure: qa_fail_screen do
+    it "qa fails when the chip heats up" do
       start_qa do |s|
         s.set_faults(chip_temp_c: 30) # 5 °C warmer after the load: 3 °C is the limit
         finish_qa(s)

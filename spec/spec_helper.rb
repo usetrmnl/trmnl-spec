@@ -10,7 +10,7 @@ $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 require "parallel_tests"
 require "trmnl_sim"
 
-%w[devices builds selection firmware_bugs setup_cache sims provisioned_device trmnl_x integration general screen
+%w[devices builds selection setup_cache sims provisioned_device trmnl_x integration general screen
    flash golden matchers metadata fixtures].each { |f| require_relative "support/#{f}" }
 Dir[File.join(__dir__, "support/*.rb")].each { |f| require f }
 

@@ -47,10 +47,10 @@ injection, memcheck, coverage) is documented in ../trmnl-sim/README.md.
   `device_image`, `needs:` / `only_on:` metadata, `match_golden`). Metadata is documented in
   `spec/support/metadata.rb`; the client library (`TrmnlSim::Simulator`, `MockTrmnl`,
   `Images`, `Lcov`) is in `lib/trmnl_sim/`.
-- A test that fails because the firmware is wrong stays in and is marked:
-  `known_failure: { "<env>" => "what the firmware does wrong, file:line" }` on the example
-  (or group), or `pending: "..."` with a comment. Verify the root cause in the firmware
-  source first. Never weaken an assertion or work around a firmware bug.
+- A test that fails because the firmware is wrong stays in and fails: no `known_failure:`,
+  `pending:`, skips, memcheck suppressions or expectations bent to match the bug. Verify the
+  root cause in the firmware source first. Never weaken an assertion or work around a
+  firmware bug.
 - A test that fails because the simulator is wrong gets the simulator fixed in ../trmnl-sim:
   general, minimal changes that keep the other chips and boards behaving identically.
 - Golden screenshots: per-device ones live in `golden/<env>/`. Look at every new or

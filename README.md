@@ -80,10 +80,9 @@ the summary again.
 
 ## Memory checking
 
-`MEMCHECK=1 rake spec` runs every simulator with `--memcheck=halt`. Known firmware
-bugs (`KNOWN_MEMORY_BUGS` in [firmware_bugs.rb](spec/support/firmware_bugs.rb)) are
-suppressed, each with a pending example in
-[memcheck_spec.rb](spec/general/tooling/memcheck_spec.rb).
+`MEMCHECK=1 rake spec` runs every simulator with `--memcheck=halt`: any memory error fails
+its example. [memcheck_spec.rb](spec/general/tooling/memcheck_spec.rb) checks for memory errors
+on every run.
 
 ## Writing tests
 
@@ -107,8 +106,7 @@ General.describe "Refresh cycle" do
       end
     end
 
-    it "resets WiFi on a long press", needs: :button,
-                                      known_failure: { "seeed_xiao_esp32c3" => "GPIO 9 can't wake a C3 (bl.cpp:2303)" } do
+    it "resets WiFi on a long press", needs: :button do
       ...
     end
   end
@@ -116,9 +114,9 @@ end
 ```
 
 Metadata ([metadata.rb](spec/support/metadata.rb)): `env:`, `needs:` (a `Device` feature),
-`only_on:` / `skip_if:` with `why:`, `needs_build:`, `slow:`, `:smoke`, and for firmware bugs
-`known_failure: { env => reason }` or `pending: reason`. A pending example that passes fails
-the run, so fixes show up. Helpers and matchers (`device_image`, `show_image`,
+`only_on:` / `skip_if:` with `why:`, `needs_build:`, `slow:`, `:smoke`. There are no expected
+failures: an example the firmware gets wrong fails (`known_failure:` and `pending:` are
+refused). Helpers and matchers (`device_image`, `show_image`,
 `match_golden`, `have_header`, ...) are in [spec/support](spec/support).
 
 The client library in [lib](lib) (standard library only):

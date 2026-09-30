@@ -10,7 +10,6 @@ images = TrmnlSim::Images
 # hw_config_init() doesn't find DEVICE_MODEL, logs the NULL name with %s (strlen(NULL): load
 # access fault) and pDevice stays NULL; the device panics and reboots endlessly before bringing
 # up the portal.
-steam_bug = "firmware bug: no trmnl_steam row in device_list[] with this env's bb_epaper (boot loop)"
 
 RSpec.describe "BYOD UC81xx boards" do
   # Does a factory-fresh device come up with its captive portal?
@@ -43,7 +42,7 @@ RSpec.describe "BYOD UC81xx boards" do
     # A 3-color palette PNG has 2 bits per pixel and more than two colors, so png_to_epd takes
     # the 4-gray path and writes the gray bit planes into the panel's black/white and red planes:
     # white comes out black, black and red come out red.
-    it "shows red", pending: "display.cpp has no black/white/red image path: 3-color PNGs take the 4-gray path" do
+    it "shows red" do
       expected = dev.mock.set_bwr_png("bwr", images.bwr_bars)
       dev.mock.display = { image: "bwr", refresh_rate: 300 }
       dev.boot_asleep do |s|
@@ -57,8 +56,7 @@ RSpec.describe "BYOD UC81xx boards" do
     # lands in DTM1 (black/white) and DTM2 (red) of this panel: black and dark gray come out red,
     # light gray white and white black. The least it should do is threshold the grays to black
     # and white.
-    it "4 gray png is shown in black and white",
-       pending: "display.cpp's 4-gray path writes its gray planes to the BWR panel's black/white and red planes" do
+    it "4 gray png is shown in black and white" do
       level = ->(x, _y) { [3, x * 4 / 800].min }
       dev.mock.images["gray4.png"] = images.png_image(level, 800, 480, bits: 2)
       dev.mock.stamp("gray4")
@@ -73,15 +71,12 @@ RSpec.describe "BYOD UC81xx boards" do
   end
 
   describe "TrmnlSteamBoots", env: "trmnl_steam" do
-    it "comes up with the portal", pending: steam_bug do
-      expect(boots_to_the_portal("trmnl_steam")).to be(true), steam_bug
+    it "comes up with the portal" do
+      expect(boots_to_the_portal("trmnl_steam")).to be(true), "no portal: it boot-loops"
     end
   end
 
   describe "TrmnlSteam", env: "trmnl_steam" do
-    # The shared examples run once the firmware gets past the bug above.
-    before(:context) { skip steam_bug unless boots_to_the_portal("trmnl_steam") }
-
     byod_board name: "TRMNL Steam", model: "trmnl_steam", size: [648, 480]
   end
 
@@ -114,7 +109,7 @@ RSpec.describe "BYOD UC81xx boards" do
     # 792x528 needs 52272 bytes; an OG-sized 800x480 BMP has 48000, so the flip writes past the
     # download buffer, corrupting the heap: the device panics (tlsf_free) and reboots, and
     # repeats that on every wake.
-    it "survives an 800x480 bmp", pending: FirmwareBugs::BMP_FLIP_OVERFLOW do
+    it "survives an 800x480 bmp" do
       dev.mock.set_image("og") { |x, y| ((x / 40) + (y / 40)).even? }
       dev.mock.display = { image: "og", refresh_rate: 300 }
       dev.boot_asleep do |s|
