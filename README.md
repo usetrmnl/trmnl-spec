@@ -66,7 +66,6 @@ change is slower. Every simulator's log and final screen are saved in `out/artif
 | `NO_CACHE=1` | Run every setup flow in full, as CI does |
 | `REALTIME=1` | Run without turbo |
 | `UPDATE_GOLDEN=1` | Rewrite golden screenshots |
-| `MEMCHECK=1` | Fail on any memory error ([below](#memory-checking)) |
 
 ## Code coverage
 
@@ -80,9 +79,9 @@ the summary again.
 
 ## Memory checking
 
-`MEMCHECK=1 rake spec` runs every simulator with `--memcheck=halt`: any memory error fails
-its example. [memcheck_spec.rb](spec/general/tooling/memcheck_spec.rb) checks for memory errors
-on every run.
+Every simulator runs with `--memcheck=halt` (see the trmnl-sim README, "Memory checking"): any
+memory error fails its example. [memcheck_spec.rb](spec/general/tooling/memcheck_spec.rb) also
+checks the IDF tasks' stack headroom and a few paths the other specs don't take.
 
 ## Writing tests
 

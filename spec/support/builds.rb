@@ -15,9 +15,9 @@ module Builds
   TURBO = ENV["REALTIME"] != "1"
   # SLOW=1: also run the examples marked `slow:`.
   SLOW = ENV["SLOW"] == "1"
-  # MEMCHECK=1: every simulator runs with --memcheck=halt, and a test fails on any
-  # memory error (the simulator halts at it, or leaving its block raises).
-  MEMCHECK = ENV["MEMCHECK"] == "1" ? "halt" : nil
+  # Every simulator runs with --memcheck=halt: a test fails on any memory error (the simulator
+  # halts at it, or leaving its block raises). An example can ask for another mode (`memcheck:`).
+  MEMCHECK = "halt"
   UPDATE_GOLDEN = ENV["UPDATE_GOLDEN"] == "1"
 
   module_function
