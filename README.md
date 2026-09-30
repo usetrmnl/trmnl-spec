@@ -15,26 +15,30 @@ Ruby 3.2+ with Bundler; the simulator and firmware are sibling checkouts (overri
 ```
 trmnl/
 ├─ trmnl-firmware/   pio run -e <env> builds .pio/build/<env>
-├─ trmnl-sim/        cargo build --release (or rake sim)
+├─ trmnl-sim/        cargo build --release (or rake sim:build)
 └─ trmnl-spec/       this repository
 ```
 
 ```sh
 bundle install
-rake sim                     # build ../trmnl-sim
-rake "firmware[trmnl]"       # pio run -e trmnl in ../trmnl-firmware (default: the core devices)
-rake check                   # rubocop, and every spec loads for every device (no firmware needed)
+rake sim:build                  # build ../trmnl-sim
+rake "firmware:build[trmnl]"    # pio run -e trmnl in ../trmnl-firmware (default: the core devices)
+rake check                      # rubocop, and every spec loads for every device (no firmware needed)
 ```
 
 ## Running
 
 ```sh
-bundle exec rspec                                     # default ENVS, one process
-bundle exec parallel_rspec                            # a process per CPU
-rake spec                                             # rake sim, then parallel_rspec
+# parallel processes:
+ENVS="trmnl:full trmnl_x" rake spec                   # rake sim:build, then parallel_rspec
 rake "spec[-n 4 spec/core]"                           # arguments pass through to parallel_rspec
-bundle exec rspec spec/general/setup/portal_spec.rb:42
+
+bundle exec parallel_rspec                            # a process per CPU
 ENVS="xteink_x4:full" bundle exec parallel_rspec      # everything for one device
+
+# one process:
+bundle exec rspec                                     # default ENVS
+bundle exec rspec spec/general/setup/portal_spec.rb:42
 ```
 
 `ENVS` lists PlatformIO environments or families (`core`: the TRMNL-branded devices; `byod`:

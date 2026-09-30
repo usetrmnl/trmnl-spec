@@ -12,7 +12,7 @@ injection, memcheck, coverage) is documented in ../trmnl-sim/README.md.
 - Commit after each coherent improvement. Commit messages: a subject line, a body saying
   why, and end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Run `rake check` (rubocop, and every spec loads for every device) before committing.
-- Never run `pio` unless asked (`rake firmware` runs it); the user builds firmware. Never edit
+- Never run `pio` unless asked (`rake firmware:build` runs it); the user builds firmware. Never edit
   `../trmnl-firmware` from here (read it freely: `src/`, `lib/`, `.pio/libdeps/<env>/`, and the
   IDF/Arduino sources under `~/.platformio/packages` are the reference for what the hardware
   must do). Never run `pio run -c <other.ini>` in the firmware checkout: a different project

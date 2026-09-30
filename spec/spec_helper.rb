@@ -25,7 +25,7 @@ RSpec.configure do |config|
     CoverageReport.install
     Artifacts.install
     unless File.executable?(TrmnlSim.binary)
-      abort "no simulator at #{TrmnlSim.binary}: build it (rake sim, or cargo build --release) or set SIM_BIN"
+      abort "no simulator at #{TrmnlSim.binary}: build it (rake sim:build, or cargo build --release) or set SIM_BIN"
     end
     missing = Selection.missing
     if missing.any?
