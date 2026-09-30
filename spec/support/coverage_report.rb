@@ -4,8 +4,9 @@ require "fileutils"
 
 # Every run records firmware coverage: each simulator writes an lcov tracefile into this run's
 # directory under tmp/coverage/, one subdirectory per build. When the run is over (all of
-# parallel_rspec's processes), they are merged into out/cov/merged.info and out/cov/html/ (TrmnlSim::Lcov),
-# and the coverage of the firmware's own src/ and lib/ is printed.
+# parallel_rspec's processes), the firmware's own code is merged into out/cov/merged.info and
+# out/cov/html/ (TrmnlSim::Lcov) and its coverage printed. Third-party code (the framework,
+# .pio/libdeps, vendored drivers) is left out: the tests aren't meant to cover it.
 #
 # The setup flows run once and are cached (SetupCache): their tracefiles are kept in the cache
 # entry and copied into every run that uses it, so a cached run reports the same lines.
@@ -14,8 +15,10 @@ module CoverageReport
   # This run's tracefiles: parallel_rspec's workers share its pid file, a plain rspec is alone.
   RUN = File.join(Builds::HERE, "tmp/coverage",
                   ENV["PARALLEL_PID_FILE"] ? File.basename(ENV["PARALLEL_PID_FILE"]) : "pid-#{Process.pid}")
-  # The firmware's own sources, in the tracefiles' paths (relative to its checkout).
-  FIRMWARE_SOURCES = %w[src/ lib/].freeze
+  # The firmware's own sources, in the tracefiles' paths (relative to its checkout). lib/ also
+  # holds vendored drivers (BMA530_SensorAPI from Bosch, BQ27427 from SparkFun, IQS323 from
+  # Azoteq), so only TRMNL's libraries are listed.
+  FIRMWARE_SOURCES = %w[src/ lib/trmnl/ lib/trmnl_x/ lib/wificaptive/].freeze
 
   module_function
 
@@ -45,17 +48,15 @@ module CoverageReport
 
     FileUtils.rm_rf(DIR)
     FileUtils.mkdir_p(DIR)
-    all = TrmnlSim::Lcov::Report.load([RUN])
-    all.write_lcov(File.join(DIR, TrmnlSim::Lcov::MERGED))
-    # Relative paths in the tracefiles are relative to the firmware checkout.
-    all.write_html(File.join(DIR, "html"), root: Builds::FIRMWARE)
-    warn "\nFirmware coverage (src/, lib/); full report in #{File.join(DIR, 'html')}"
-    puts all.total_line
     own = TrmnlSim::Lcov::Report.load([RUN], include: FIRMWARE_SOURCES)
+    own.write_lcov(File.join(DIR, TrmnlSim::Lcov::MERGED))
+    # Relative paths in the tracefiles are relative to the firmware checkout.
+    own.write_html(File.join(DIR, "html"), root: Builds::FIRMWARE)
+    warn "\nFirmware coverage (#{FIRMWARE_SOURCES.join(', ')}); full report in #{File.join(DIR, 'html')}"
     puts own.summary, "(#{own.tracefiles} tracefiles)"
     builds = Dir[File.join(RUN, "*/")]
     if builds.size > 1
-      warn "\nPer build (src/, lib/ lines each build compiles):"
+      warn "\nPer build (the lines of the firmware's own code each build compiles):"
       builds.sort.each do |b|
         warn "  #{File.basename(b).ljust(32)} #{TrmnlSim::Lcov::Report.load([b], include: FIRMWARE_SOURCES).total_line}"
       end
