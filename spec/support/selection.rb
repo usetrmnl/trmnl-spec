@@ -1,32 +1,39 @@
 # frozen_string_literal: true
 
 # The devices a run covers: ENVS, a list (spaces or commas between entries) of PlatformIO
-# environments (case-insensitive) or families (core, byod, all), each optionally suffixed :full:
+# environments (case-insensitive) or families (core, byod, all), each optionally suffixed :full
+# or :smoke:
 #
 #   ENVS="trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr"   # the default
 #   ENVS=byod                     # every BYOD board
 #   ENVS="xteink_x4:full"         # everything for the Xteink X4
+#   ENVS=all:smoke                # the :smoke examples on every device
 #   ENVS=all:full                 # the whole general suite on every device
 #
 # A listed device runs its own specs and the general specs' :smoke examples; with :full, every
-# general example. Examples of devices not listed, or whose build is missing, are left out (see
-# `missing`; a dry run keeps those).
+# general example too; with :smoke, only its :smoke examples. Examples of devices not listed, or
+# whose build is missing, are left out (see `missing`; a dry run keeps those).
 module Selection
   DEFAULT = "trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr"
   FAMILIES = { "core" => Devices::CORE, "byod" => Devices::BYOD, "all" => Devices::ALL }.freeze
+  # A device's tiers, narrowest first (no suffix is :default).
+  TIERS = %i[smoke default full].freeze
+  SUFFIXES = [nil, "full", "smoke"].freeze
 
   module_function
 
   # The ENVS list in force.
   def spec = ENV.fetch("ENVS", "").strip.then { _1.empty? ? DEFAULT : _1 }
 
-  # {Device => :full or :smoke} for an ENVS list; a device listed twice gets the wider.
+  # {Device => tier} for an ENVS list; a device listed twice gets the wider.
   def parse(list)
     list.split(/[\s,]+/).reject(&:empty?).each_with_object({}) do |entry, tiers|
       name, suffix = entry.split(":", 2)
-      raise ArgumentError, "ENVS: #{entry}: the only suffix is :full" unless [nil, "full"].include?(suffix)
+      raise ArgumentError, "ENVS: #{entry}: the suffixes are :full and :smoke" unless SUFFIXES.include?(suffix)
 
-      devices(name).each { |d| tiers[d] = suffix ? :full : tiers.fetch(d, :smoke) }
+      tier = suffix ? suffix.to_sym : :default
+
+      devices(name).each { |d| tiers[d] = [tier, tiers[d]].compact.max_by { TIERS.index(_1) } }
     end
   end
 
@@ -53,10 +60,18 @@ module Selection
     tiers.key?(device) && (RSpec.configuration.dry_run? || Builds.built?(device.env))
   end
 
-  # Whether the example of metadata `meta` runs: its device runs, and it is :smoke or its device
-  # is listed with :full (or its group is one device's own, `general: :own`; see General).
+  # Whether the example of metadata `meta` runs: its device runs, and its tier takes it. :full
+  # takes every example; :default the device's own (not general, or `general: :own`; see General)
+  # and :smoke ones; :smoke only :smoke ones.
   def run_example?(meta)
     env = meta[:env]
-    env.nil? || (run?(env) && (meta[:general] != :smoke || meta[:smoke]))
+    return true if env.nil?
+    return false unless run?(env)
+
+    case tiers[Devices.fetch(env)]
+    when :full then true
+    when :default then meta[:general].nil? || meta[:general] == :own || meta[:smoke]
+    else meta[:smoke]
+    end
   end
 end

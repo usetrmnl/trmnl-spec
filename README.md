@@ -42,10 +42,11 @@ bundle exec rspec spec/general/setup/portal_spec.rb:42
 ```
 
 `ENVS` lists PlatformIO environments or families (`core`: the TRMNL-branded devices; `byod`:
-every other board; `all`), each optionally `:full`. A listed device runs its own specs plus
-the general `:smoke` examples (one per area); `:full` runs every general example on it. The
-default is `trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr`. Unlisted devices and
-missing builds are skipped (missing builds fail under CI).
+every other board; `all`), each optionally `:full` or `:smoke`. A listed device runs its own
+specs plus the general `:smoke` examples (one per area); `:full` runs every general example on
+it too, and `:smoke` only its `:smoke` examples. The default is
+`trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr`. Unlisted devices and missing builds
+are skipped (missing builds fail under CI).
 
 Specs live in [spec/general](spec/general) (every device, by area),
 [spec/core](spec/core) and [spec/byod](spec/byod). Onboarded devices are cached in

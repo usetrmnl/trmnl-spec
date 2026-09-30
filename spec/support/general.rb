@@ -13,9 +13,9 @@
 #
 # is `RSpec.describe "Refresh cycle"` holding a group per device ("Refresh cycle TRMNL X ...")
 # with that device's `env:`, in which `device` and `build` are that device's (also in the group
-# body: `if device.button?`). On a device listed without :full only the :smoke examples run, and
-# a group marked `general: :own` (one device's own examples in a general file, defined under
-# `next unless device.env == ...`).
+# body: `if device.button?`). Which of them run depends on how the device is listed (see
+# Selection): a group marked `general: :own` holds one device's own examples in a general file
+# (defined under `next unless device.env == ...`), which run like its own spec files'.
 module General
   module_function
 
@@ -23,8 +23,8 @@ module General
     # The groups' location is the spec file's (for rerun commands and ids), not this file's.
     at = caller
     RSpec.describe(description, **meta, caller: at) do
-      Selection.general.each do |device, tier|
-        describe(device.name, env: device.env, general: tier, caller: at, &block)
+      Selection.general.each_key do |device|
+        describe(device.name, env: device.env, general: true, caller: at, &block)
       end
     end
   end

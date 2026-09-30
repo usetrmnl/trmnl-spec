@@ -25,8 +25,9 @@ injection, memcheck, coverage) is documented in ../trmnl-sim/README.md.
 - Plain RSpec: `bundle exec rspec [path[:line]] [-e ...]`, or `bundle exec parallel_rspec`
   (`rake spec` builds the simulator first, then runs it). `ENVS`
   (spec/support/selection.rb) lists the devices a run covers: PlatformIO environments or
-  `core` / `byod` / `all`, each optionally `:full`. A listed device runs its own specs and
-  the general `:smoke` examples; `:full` runs every general example on it. Default
+  `core` / `byod` / `all`, each optionally `:full` or `:smoke`. A listed device runs its own
+  specs and the general `:smoke` examples; `:full` runs every general example on it too,
+  `:smoke` only its `:smoke` examples. Default
   `trmnl:full TRMNL_X trmnl_4clr trmnl_gen2 trmnl_gen2_4clr`; unlisted devices and missing
   builds are left out (a new example without `:smoke` needs its device listed with `:full`).
   `SLOW=1`, `NO_CACHE=1` as needed.
