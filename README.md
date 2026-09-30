@@ -66,7 +66,6 @@ change is slower. Every simulator's log and final screen are saved in `out/artif
 | `REALTIME=1` | Run without turbo |
 | `UPDATE_GOLDEN=1` | Rewrite golden screenshots |
 | `MEMCHECK=1` | Fail on any memory error ([below](#memory-checking)) |
-| `NETWORK=1` | Also run examples against the real trmnl.app |
 
 ## Code coverage
 

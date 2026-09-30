@@ -16,7 +16,6 @@
 #   it "...", only_on: %w[trmnl trmnl_4clr], why: "..."   # skipped on other devices
 #   it "...", needs_build: "trmnl_4clr"                   # skipped unless that build exists
 #   it "...", slow: "the wiper runs 100 refreshes"        # skipped unless SLOW=1
-#   it "...", :network                                     # reaches trmnl.app: NETWORK=1
 #
 # There are no expected failures: an example the firmware gets wrong fails the run
 # (`known_failure:` and `pending:` are refused).
@@ -56,8 +55,6 @@ module Metadata
     if (envs = meta[:only_on]) && !Array(envs).include?(device.env)
       return "only on #{Array(envs).join(', ')}: #{meta.fetch(:why)}"
     end
-
-    return "reaches the real trmnl.app; NETWORK=1 runs it" if meta[:network] && !Builds::NETWORK
 
     "slow (#{meta[:slow]}); SLOW=1 runs it" if meta[:slow] && !Builds::SLOW
   end

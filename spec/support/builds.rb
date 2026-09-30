@@ -11,8 +11,6 @@ module Builds
   DIR = File.join(FIRMWARE, ".pio/build")
 
   TEST_MAC = "7C:DF:A1:00:00:01"
-  # NETWORK=1: tests that reach the real internet run.
-  NETWORK = ENV["NETWORK"] == "1"
   # Turbo (network-aware fast-forward) unless REALTIME=1.
   TURBO = ENV["REALTIME"] != "1"
   # SLOW=1: also run the examples marked `slow:`.
