@@ -1,1 +1,3 @@
 /tmp/
+# screenshots of failed golden comparisons
+/golden/**/*.actual.png

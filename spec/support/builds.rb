@@ -2,10 +2,9 @@
 
 # Where the firmware builds are, and the settings every simulator of a run shares.
 module Builds
-  HERE = File.expand_path("../..", __dir__) # the suite's root (tests/integration)
-  # The trmnl-sim checkout (TRMNL_SIM_REPO): its release build, and target/ for the setup cache.
-  ROOT = TrmnlSim::REPO
-  FIRMWARE = File.expand_path(ENV.fetch("TRMNL_FIRMWARE", File.join(ROOT, "../trmnl-firmware")))
+  HERE = File.expand_path("../..", __dir__) # this repository's root
+  # The firmware checkout (TRMNL_FIRMWARE, else ../trmnl-firmware next to this repository).
+  FIRMWARE = File.expand_path(ENV.fetch("TRMNL_FIRMWARE", File.join(HERE, "../trmnl-firmware")))
   # PlatformIO build directories of the firmware checkout, one per environment
   # (TRMNL_FIRMWARE_BUILDS=<checkout>/.pio/build for another checkout).
   DIR = ENV.fetch("TRMNL_FIRMWARE_BUILDS", File.join(FIRMWARE, ".pio/build"))

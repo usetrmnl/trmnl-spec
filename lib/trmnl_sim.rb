@@ -19,8 +19,8 @@ module TrmnlSim
   class TimeoutError < Error; end
 
   # The trmnl-sim checkout (for its default binary, target/release/trmnl-sim): TRMNL_SIM_REPO, else
-  # the one these tests live in.
-  REPO = File.expand_path(ENV.fetch("TRMNL_SIM_REPO", nil) || File.join(__dir__, "../../.."))
+  # ../trmnl-sim next to this repository.
+  REPO = File.expand_path(ENV.fetch("TRMNL_SIM_REPO", nil) || File.join(__dir__, "../../trmnl-sim"))
 
   # The simulator executable: TRMNL_SIM_BIN, else the checkout's release build.
   def self.binary = ENV.fetch("TRMNL_SIM_BIN", nil) || File.join(REPO, "target/release/trmnl-sim")

@@ -11,14 +11,14 @@ require "tmpdir"
 # An entry is keyed by everything that went into it: the firmware build's files, the simulator
 # binary, the test support code, the fixture's own parameters and the memcheck/turbo settings.
 # Change any of them and the key changes, so the entry is rebuilt on the next run; nothing has to
-# be invalidated by hand. Entries live in target/spec-cache/ (`cargo clean` removes them), and
+# be invalidated by hand. Entries live in tmp/spec-cache/ (gitignored; delete it to start over), and
 # only the newest few per fixture are kept.
 #
 # TRMNL_SPEC_NO_CACHE=1 builds everything from scratch, as CI does, and
 # so does a coverage run (TRMNL_SIM_COVERAGE), whose report should include the setup flows.
 # Parallel workers that need the same missing entry build it once: the others wait for it.
 module SetupCache
-  DIR = File.join(Builds::ROOT, "target/spec-cache")
+  DIR = File.join(Builds::HERE, "tmp/spec-cache")
   ENABLED = ENV.fetch("TRMNL_SPEC_NO_CACHE", "").empty? && ENV.fetch("TRMNL_SIM_COVERAGE", "").empty?
   # Bump when what an entry holds changes shape.
   FORMAT = 2

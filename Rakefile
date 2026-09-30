@@ -17,9 +17,8 @@
 #
 # Uses ../trmnl-firmware/.pio/build/<env> (TRMNL_FIRMWARE=<checkout> to use another one); a
 # listed device whose build is missing is left out. The firmware is only built by `rake
-# firmware`. Onboarded devices etc. are cached in the simulator checkout's target/spec-cache/,
-# keyed by the firmware, the simulator and the spec support code. See the README's "Integration
-# testing" for the environment variables.
+# firmware`. Onboarded devices etc. are cached in tmp/spec-cache/, keyed by the firmware, the
+# simulator and the spec support code. See the README for the environment variables.
 
 require "shellwords"
 
