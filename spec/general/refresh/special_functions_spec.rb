@@ -121,16 +121,17 @@ General.describe "Special functions" do
       expect(st["wake_at_s"] - st["sim_time_s"]).to be_within(30).of(1200)
     end
 
-    # Rewind shows /last.bmp or /last.png, which no firmware code writes: it reads the missing
-    # /last.png (display_read_file returns NULL), pretends it decoded
-    # ("image_proccess_response = PNG_NO_ERR; // DEBUG") and passes NULL to display_show_image.
+    # Rewind shows /last.bmp or /last.png, which no firmware code writes: without a previous image
+    # it once passed NULL from display_read_file to display_show_image and crashed.
     it "rewind without a previous image does not crash" do
       dev.boot do |s|
         assign(s, "rewind")
+        boots = s.status["boot_count"]
         run_function(s, { image: "default", action: "rewind", refresh_rate: 300 })
         st = s.wait_for_deep_sleep(timeout: 120)
         expect(st["state"]).not_to eq("halted")
-        expect(st["boot_count"]).to eq(1), "the device restarted (crashed)"
+        # the button press wakes it from deep sleep (a boot); any more is a restart
+        expect(st["boot_count"]).to eq(boots + 1), "the device restarted (crashed)"
       end
     end
   end
