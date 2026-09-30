@@ -75,12 +75,8 @@ Every run records firmware coverage and, when it ends, writes it to `out/cov/mer
 (`src/` and TRMNL's libraries in `lib/`), not the framework, `.pio/libdeps` or the vendored
 drivers in `lib/` (see `FIRMWARE_SOURCES` in [coverage_report.rb](spec/support/coverage_report.rb)). Cached
 setup flows keep their coverage, so a cached run reports the same lines as a full one.
-[`TrmnlSim::Lcov`](lib/trmnl_sim/lcov.rb) also merges tracefiles on its own:
-
-```sh
-rake "coverage[DIR --include src/ --include lib/]"
-rake "coverage[DIR -o all.info --html cov-html --root ../trmnl-firmware]"
-```
+`rake coverage` rebuilds the HTML report from the last run's `out/cov/merged.info` and prints
+the summary again.
 
 ## Memory checking
 

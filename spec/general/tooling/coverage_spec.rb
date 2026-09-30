@@ -4,7 +4,7 @@ require "stringio"
 require "tmpdir"
 
 # Firmware code coverage (`--coverage`): lcov mid-run over the control API and at exit, and
-# merging tracefiles (TrmnlSim::Lcov, `rake coverage`).
+# merging tracefiles (TrmnlSim::Lcov).
 
 General.describe "Coverage" do
   describe "Coverage" do

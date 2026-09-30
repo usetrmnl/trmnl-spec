@@ -10,7 +10,7 @@
 #   rake "spec[-n 4 spec/core]"                        # parallel_rspec's arguments pass through
 #   rake "firmware:build[xteink_x4]" spec              # pio run -e xteink_x4 first
 #   rake check                                         # rubocop, and the specs load (no firmware needed)
-#   rake "coverage[DIR --include src/ -q]"             # merge and report lcov tracefiles (TrmnlSim::Lcov)
+#   rake coverage                                      # the last run's coverage report again
 #
 # A task's argument is one string, split like a shell command line (quote the task in zsh: its
 # brackets are globs).
@@ -25,6 +25,7 @@ require "shellwords"
 require_relative "lib/trmnl_sim"
 require_relative "spec/support/devices"
 require_relative "spec/support/builds"
+require_relative "spec/support/coverage_report"
 
 # A task's argument as argv (Rake splits arguments at commas: put them back).
 def task_args(args) = Shellwords.split([args[:args], *args.extras].compact.join(","))
@@ -59,11 +60,9 @@ namespace :firmware do
   end
 end
 
-desc "Merge lcov tracefiles and report (argument: tracefiles or directories, -o FILE, --include PREFIX, " \
-     "--html DIR, --root DIR, -q)"
-task :coverage, [:args] do |_, args|
-  status = TrmnlSim::Lcov.main(task_args(args))
-  exit(status) unless status.zero?
+desc "Rebuild the last run's coverage report (out/cov/html) and print its summary"
+task :coverage do
+  CoverageReport.reprint
 end
 
 desc "Check the specs' style (rubocop)"

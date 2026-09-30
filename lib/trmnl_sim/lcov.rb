@@ -256,7 +256,7 @@ module TrmnlSim
       end
     end
 
-    # The command line (`rake "coverage[...]"`): inputs, then -o FILE, --include PREFIX
+    # The command line: inputs, then -o FILE, --include PREFIX
     # (repeatable), --html DIR, --root DIR, -q. Returns the exit status.
     def main(argv, out: $stdout, err: $stderr)
       opts = { include: [], root: "." }

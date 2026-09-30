@@ -43,17 +43,13 @@ module CoverageReport
     end
   end
 
+  def merged = File.join(DIR, TrmnlSim::Lcov::MERGED)
+
+  # Merge this run's tracefiles into the report (at the end of a run).
   def print
     return unless Dir.exist?(RUN)
 
-    FileUtils.rm_rf(DIR)
-    FileUtils.mkdir_p(DIR)
-    own = TrmnlSim::Lcov::Report.load([RUN], include: FIRMWARE_SOURCES)
-    own.write_lcov(File.join(DIR, TrmnlSim::Lcov::MERGED))
-    # Relative paths in the tracefiles are relative to the firmware checkout.
-    own.write_html(File.join(DIR, "html"), root: Builds::FIRMWARE)
-    warn "\nFirmware coverage (#{FIRMWARE_SOURCES.join(', ')}); full report in #{File.join(DIR, 'html')}"
-    puts own.summary, "(#{own.tracefiles} tracefiles)"
+    write(RUN)
     builds = Dir[File.join(RUN, "*/")]
     if builds.size > 1
       warn "\nPer build (the lines of the firmware's own code each build compiles):"
@@ -63,5 +59,24 @@ module CoverageReport
     end
   ensure
     FileUtils.rm_rf(RUN)
+  end
+
+  # Rebuild the report from the last run's merged tracefile (`rake coverage`).
+  def reprint
+    abort "no coverage report at #{merged}: run the specs first" unless File.exist?(merged)
+    write(merged)
+  end
+
+  # Write `input` (a tracefile or a directory of them) as cov/merged.info and cov/html/, and
+  # print the summary.
+  def write(input)
+    report = TrmnlSim::Lcov::Report.load([input], include: FIRMWARE_SOURCES)
+    FileUtils.rm_rf(File.join(DIR, "html"))
+    FileUtils.mkdir_p(DIR)
+    report.write_lcov(merged)
+    # Relative paths in the tracefiles are relative to the firmware checkout.
+    report.write_html(File.join(DIR, "html"), root: Builds::FIRMWARE)
+    warn "\nFirmware coverage (#{FIRMWARE_SOURCES.join(', ')}); full report in #{File.join(DIR, 'html')}"
+    puts report.summary, "(#{report.tracefiles} tracefiles)"
   end
 end
