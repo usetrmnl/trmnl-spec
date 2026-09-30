@@ -171,10 +171,12 @@ module TrmnlSim
     module Html
       CSS = <<~CSS
         body { font: 14px/1.4 -apple-system, system-ui, sans-serif; margin: 16px; color: #1d1d1f; background: #fff; }
+        :root { color-scheme: light dark; }
         table { border-collapse: collapse; }
         td, th { padding: 2px 10px; text-align: right; }
         td:first-child, th:first-child { text-align: left; }
         tr:nth-child(even) { background: #f4f4f6; }
+        a { color: #0550ae; } a:visited { color: #6639ba; }
         .bar { display: inline-block; width: 80px; height: 8px; background: #e5484d; vertical-align: middle; }
         .bar i { display: block; height: 100%; background: #30a46c; }
         pre { margin: 0; font: 12px/1.45 ui-monospace, Menlo, monospace; }
@@ -184,6 +186,7 @@ module TrmnlSim
         @media (prefers-color-scheme: dark) {
           body { color: #e8e8ea; background: #1b1b1f; } tr:nth-child(even) { background: #25252a; }
           .hit { background: #1d3b2a; } .miss { background: #4a2126; }
+          a { color: #79b8ff; } a:visited { color: #c9a7ff; }
         }
       CSS
       ESCAPES = { "&" => "&amp;", "<" => "&lt;", ">" => "&gt;", '"' => "&quot;", "'" => "&#x27;" }.freeze
