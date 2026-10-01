@@ -136,6 +136,9 @@ jobs:
       - name: Build simulator (headless)
         run: cargo build --release --no-default-features --manifest-path trmnl-sim/Cargo.toml
 
+      - name: Install QR decoder
+        run: sudo apt-get update && sudo apt-get install -y zbar-tools
+
       - name: Integration tests
         working-directory: trmnl-spec
         env:
