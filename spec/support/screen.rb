@@ -6,10 +6,15 @@ require "zlib"
 module Screen
   module_function
 
-  # The rows of an 8-bit grayscale PNG (a Simulator#screenshot), each an array of pixel values.
+  # Bytes per pixel of the 8-bit PNG color types a Simulator#screenshot uses: gray on black-and-white
+  # panels, RGB on color ones.
+  CHANNELS = { 0 => 1, 2 => 3 }.freeze
+
+  # The rows of a screenshot as gray levels (RGB as its luma), each an array of pixel values.
   def gray_rows(png)
     width, height, depth, color = png.byteslice(16, 10).unpack("NNCC")
-    raise ArgumentError, "not an 8-bit gray PNG: depth #{depth}, color type #{color}" unless [depth, color] == [8, 0]
+    bpp = CHANNELS[color] if depth == 8
+    raise ArgumentError, "not an 8-bit gray or RGB PNG: depth #{depth}, color type #{color}" unless bpp
 
     idat = +"".b
     pos = 8
@@ -19,17 +24,19 @@ module Screen
       pos += 12 + n
     end
     raw = Zlib::Inflate.inflate(idat).bytes
-    prev = Array.new(width, 0)
+    stride = width * bpp
+    prev = Array.new(stride, 0)
     Array.new(height) do |y|
-      filter = raw[y * (width + 1)]
-      line = raw[(y * (width + 1)) + 1, width]
-      width.times do |x|
-        a = x.positive? ? line[x - 1] : 0
-        b = prev[x]
-        c = x.positive? ? prev[x - 1] : 0
-        line[x] = (line[x] + unfilter(filter, a, b, c)) & 0xFF
+      filter = raw[y * (stride + 1)]
+      line = raw[(y * (stride + 1)) + 1, stride]
+      stride.times do |i|
+        a = i >= bpp ? line[i - bpp] : 0
+        b = prev[i]
+        c = i >= bpp ? prev[i - bpp] : 0
+        line[i] = (line[i] + unfilter(filter, a, b, c)) & 0xFF
       end
       prev = line
+      bpp == 1 ? line : line.each_slice(3).map { |r, g, b| ((299 * r) + (587 * g) + (114 * b)) / 1000 }
     end
   end
 
