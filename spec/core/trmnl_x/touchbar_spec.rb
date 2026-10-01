@@ -162,10 +162,9 @@ RSpec.describe "TRMNL X touch bar", env: "TRMNL_X" do
       end
     end
 
-    # A tap wakes the device with the finger already lifted: the wake stub's slider
-    # coordinate is 0xFFFF, so read_gesture_event() clears the TAP before
-    # check_channel_states() runs, and the tap is handled as a plain wake (a refresh)
-    # with no "... button pressed" or indicator.
+    # The IQS323 reports a tap on release, when the slider coordinate is already 0xFFFF and no
+    # channel is touched, so slide mode also wakes on the touch: the firmware notes the touched
+    # channels, then waits for the gesture (slide_mode_await_gesture in src/bl.cpp).
     it "taps" do
       boot_two_images("slide") do |s|
         { "left" => "Back button pressed", "center" => "Middle button pressed",
