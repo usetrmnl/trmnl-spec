@@ -26,7 +26,7 @@ module SetupCache
   KEEP = 3
   # What the simulator loads from a PlatformIO build dir (see src/firmware.rs), and the app
   # image the OTA specs serve.
-  BUILD_FILES = %w[merged_firmware.bin firmware.elf firmware.bin].freeze
+  BUILD_FILES = %w[merged_firmware.bin merged_firmware.elf firmware.bin].freeze
   # The code that drives the setup flows.
   SUPPORT_FILES = [
     *Dir[File.join(Builds::HERE, "lib/**/*.rb")],

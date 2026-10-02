@@ -26,21 +26,10 @@ module TrmnlSim
   def self.binary = ENV.fetch("SIM_BIN", nil) || File.join(REPO, "target/release/trmnl-sim")
 
   # The merged flash image the simulator runs, for a path to one or a PlatformIO build dir
-  # (its merged_firmware.bin). The simulator wants the ELF at the image's path with .elf;
-  # PlatformIO calls it firmware.elf, so a build dir gets a merged_firmware.elf symlink to it.
+  # (its merged_firmware.bin). The simulator loads the ELF at the image's path with .elf.
   def self.merged_image(path)
     path = File.expand_path(path.to_s)
-    return path unless File.directory?(path)
-
-    elf = File.join(path, "merged_firmware.elf")
-    if !File.exist?(elf) && File.exist?(File.join(path, "firmware.elf"))
-      begin
-        File.symlink("firmware.elf", elf)
-      rescue Errno::EEXIST
-        nil # another worker made it
-      end
-    end
-    File.join(path, "merged_firmware.bin")
+    File.directory?(path) ? File.join(path, "merged_firmware.bin") : path
   end
 end
 
