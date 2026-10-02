@@ -250,6 +250,35 @@ module TrmnlSim
       end
     end
 
+    # ---- firmware preferences and mock Bluetooth ------------------------------------------------------
+
+    def preferences = get_json("/preferences")
+
+    # Values are strings, including decimal integers and hexadecimal blobs.
+    def set_preference(namespace, key, type:, value:, partition: "nvs")
+      body = { partition:, namespace:, key:, type:, value: }
+      checked(:put, "/preferences", request(:put, "/preferences", body:))
+    end
+
+    def delete_preference(namespace, key, partition: "nvs")
+      body = { partition:, namespace:, key: }
+      checked(:delete, "/preferences", request(:delete, "/preferences", body:))
+    end
+
+    def bluetooth_connect = post("/bluetooth/connect").fetch("connection")
+
+    def bluetooth_disconnect(connection)
+      post("/bluetooth/disconnect", { connection: })
+    end
+
+    def bluetooth_att(connection, data)
+      post("/bluetooth/att", { connection:, data: data.bytes }).fetch("data").pack("C*")
+    end
+
+    def bluetooth_receive(connection)
+      post("/bluetooth/receive", { connection: })
+    end
+
     # ---- save points ----------------------------------------------------------------------------------
 
     # Take a save point: in deep sleep the full device state, otherwise only what survives a

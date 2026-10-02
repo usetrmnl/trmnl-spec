@@ -9,7 +9,8 @@ boards.
 
 ## Setup
 
-Ruby 3.2+ with Bundler; the simulator and firmware are sibling checkouts (override with
+Ruby 3.2+ with Bundler, plus `zbarimg` for the Bluetooth QR specs (`brew install zbar`
+on macOS or `apt install zbar-tools` on Linux); the simulator and firmware are sibling checkouts (override with
 `FIRMWARE_REPO`, `SIM_REPO` or `SIM_BIN`):
 
 ```
@@ -65,6 +66,7 @@ change is slower. Every simulator's log and final screen are saved in `out/artif
 | `SLOW=1` | Also run examples marked `slow:` |
 | `NO_CACHE=1` | Run every setup flow in full, as CI does |
 | `REALTIME=1` | Run without turbo |
+| `PAIRING_HOST` | Host compiled into the BLE setup firmware (default `trmnl.app`); redirected to a local TLS mock |
 | `UPDATE_GOLDEN=1` | Rewrite golden screenshots |
 
 ## Code coverage
@@ -123,6 +125,17 @@ The client library in [lib](lib) (standard library only):
 - **`TrmnlSim::Simulator`** drives a headless simulator over its control API: `wait(...)`
   on console output, state, refreshes, WiFi or portal; `press(ms)` / `touch(...)` in exact
   virtual time; `save_point` / `restore`; `set_faults`; `memcheck`.
+- **Bluetooth:** `Simulator#bluetooth_connect`, `bluetooth_att`, `bluetooth_receive`, and
+  `bluetooth_disconnect` expose the mock radio API. `TrmnlSim::Bluetooth` discovers real
+  NimBLE characteristics and handles ATT reads/writes; `TrmnlSim::Security1` implements
+  the phone-side X25519/AES-CTR protocol using Ruby OpenSSL. The OG Bluetooth specs decode
+  the rendered QR and cover discovery, authentication, long writes, oversize rejection,
+  reconnect/reset, wrong proof, and encrypted WiFi/setup-code handoff. They require a
+  BLE-enabled `trmnl` build. TLS setup stays local with offline simulator networking.
+- **Preferences:** `Simulator#preferences`, `set_preference(namespace, key, type:, value:,
+  partition: "nvs")`, and `delete_preference(namespace, key, partition: "nvs")` inspect and
+  edit NVS. `spec/general/tooling/preferences_spec.rb` covers deep-sleep edits, typed and
+  unmasked values, multi-page blobs, rejected writes, wake behavior, and persistence.
 - **`TrmnlSim::MockTrmnl`** is a fake TRMNL server (HTTP or TLS) that serves
   `/api/setup`, `/api/display`, images and firmware, records every request, generates BMP
   and PNG images in each device's format (returning the expected screen), and injects HTTP
