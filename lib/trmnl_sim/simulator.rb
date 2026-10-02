@@ -76,7 +76,7 @@ module TrmnlSim
       binary = (binary || TrmnlSim.binary).to_s
       raise Error, "#{binary} not found; run `cargo build --release` in #{REPO}" unless File.exist?(binary)
 
-      args = [binary, @env, @firmware, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
+      args = [binary, @firmware, "--env", @env, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
       args << "--headless" unless gui
       args << "--erase" if erase || !flash
       args += ["--mac", mac] if mac
