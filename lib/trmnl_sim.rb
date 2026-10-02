@@ -5,7 +5,7 @@
 #
 #     require "trmnl_sim"                              # with this lib/ on the load path
 #
-#     TrmnlSim::Simulator.open("../trmnl-firmware/.pio/build/trmnl/merged_firmware.bin", erase: true) do |sim|
+#     TrmnlSim::Simulator.open("trmnl", "../trmnl-firmware/.pio/build/trmnl/merged_firmware.bin", erase: true) do |sim|
 #       sim.wait(portal: true, timeout: 60)              # device is in WiFi setup mode
 #       sim.wait(display_idle: true, min_refreshes: 1)
 #       sim.portal_connect("TRMNL-Sim", "secret")

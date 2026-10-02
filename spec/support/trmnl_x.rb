@@ -26,7 +26,7 @@ module TrmnlX
     kw = { name: Sims.current_name, mac: MAC, turbo: Builds::TURBO, memcheck: Builds::MEMCHECK }.merge(kw)
     extra = kw.delete(:extra_args).to_a
     extra += ["--offline"] unless extra.include?("--offline")
-    s = TrmnlSim::Simulator.new(build, extra_args: extra, **kw)
+    s = TrmnlSim::Simulator.new(Builds.env_of(build), build, extra_args: extra, **kw)
     block ? s.session(&block) : s
   end
 
@@ -90,7 +90,7 @@ module TrmnlX
       end
       FileUtils.cp(unboxed, kw[:flash])
     end
-    XSim.new(build, own_flash: own, **kw)
+    XSim.new(Builds.env_of(build), build, own_flash: own, **kw)
   end
 
   # A simulated TRMNL X for the general tests: the button actions they use are done with the

@@ -19,7 +19,7 @@ module Sims
     s = if Builds.device_of(build)&.env == "TRMNL_X"
           TrmnlX.general_sim(build, **kw)
         else
-          TrmnlSim::Simulator.new(build, **kw)
+          TrmnlSim::Simulator.new(Builds.env_of(build), build, **kw)
         end
     block ? s.session(&block) : s
   end

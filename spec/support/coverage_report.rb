@@ -22,12 +22,16 @@ module CoverageReport
 
   module_function
 
-  def install = TrmnlSim::Simulator.coverage_dir = RUN
+  def install
+    TrmnlSim::Simulator.coverage_dir = RUN
+    TrmnlSim::Simulator.coverage_root = Builds::FIRMWARE
+  end
 
   # Simulators started in the block write their tracefiles into `dir` (a setup cache entry's).
   def recording_into(dir)
     before = TrmnlSim::Simulator.coverage_dir
     TrmnlSim::Simulator.coverage_dir = dir
+    TrmnlSim::Simulator.coverage_root = Builds::FIRMWARE
     yield
   ensure
     TrmnlSim::Simulator.coverage_dir = before

@@ -33,8 +33,9 @@ module Builds
     "no #{env} merged_firmware.bin + .elf at #{for_env(env)} (pio run -e #{env})" unless built?(env)
   end
 
+  # The environment of one of these builds (`for_env`).
+  def env_of(build) = File.basename(File.expand_path(build.to_s))
+
   # The device a build directory is for (nil: unknown).
-  def device_of(build)
-    Devices::BY_ENV[File.basename(File.expand_path(build.to_s))]
-  end
+  def device_of(build) = Devices::BY_ENV[env_of(build)]
 end

@@ -9,6 +9,7 @@ require "uri"
 module TrmnlSim
   # Launches trmnl-sim (headless unless `gui: true`) and drives it over its control API.
   #
+  #   env:        the PlatformIO environment the firmware was built with (picks the board).
   #   firmware:   the merged flash image (merged_firmware.bin), with its ELF at the same path with
   #               .elf; or a PlatformIO build dir, for its merged_firmware.bin (see
   #               TrmnlSim.merged_image).
@@ -36,11 +37,14 @@ module TrmnlSim
   #   coverage:   record firmware code coverage and write an lcov tracefile here when the
   #               simulator exits (`--coverage`). If `Simulator.coverage_dir` is set, every
   #               simulator writes one there (`<build>/<name>-*.info`); merge them with
-  #               TrmnlSim::Lcov.
+  #               TrmnlSim::Lcov. Source paths are relative to `Simulator.coverage_root` if set
+  #               (`--coverage-root`), else absolute.
   class Simulator
     class << self
       # Where every simulator writes a coverage tracefile unless given `coverage:` (nil: none).
       attr_accessor :coverage_dir
+      # The directory coverage source paths are written relative to (nil: absolute paths).
+      attr_accessor :coverage_root
       # Where every simulator saves its log and final screen on close (nil: nowhere).
       attr_accessor :artifacts_dir
     end
@@ -55,11 +59,12 @@ module TrmnlSim
       block ? sim.session(&block) : sim
     end
 
-    attr_reader :firmware, :build_dir, :flash, :log_path, :name, :coverage_path, :base, :pid, :memcheck_mode
+    attr_reader :env, :firmware, :build_dir, :flash, :log_path, :name, :coverage_path, :base, :pid, :memcheck_mode
 
-    def initialize(firmware, flash: nil, erase: false, mac: nil, turbo: false, gui: false, binary: nil,
+    def initialize(env, firmware, flash: nil, erase: false, mac: nil, turbo: false, gui: false, binary: nil,
                    extra_args: [], faults: nil, networks: nil, startup_timeout: 30, name: nil, restore: nil,
                    host_ports: {}, coverage: nil, memcheck: nil, memcheck_suppress: [])
+      @env = env.to_s
       @firmware = TrmnlSim.merged_image(firmware)
       @build_dir = File.dirname(@firmware)
       @tmpdir = Dir.mktmpdir("trmnl-sim-")
@@ -71,7 +76,7 @@ module TrmnlSim
       binary = (binary || TrmnlSim.binary).to_s
       raise Error, "#{binary} not found; run `cargo build --release` in #{REPO}" unless File.exist?(binary)
 
-      args = [binary, @firmware, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
+      args = [binary, @env, @firmware, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
       args << "--headless" unless gui
       args << "--erase" if erase || !flash
       args += ["--mac", mac] if mac
@@ -80,6 +85,7 @@ module TrmnlSim
       host_ports.each { |guest, host| args += ["--host-port", "#{guest}=#{host}"] }
       @coverage_path = (coverage || default_coverage_path)&.to_s
       args += ["--coverage", @coverage_path] if @coverage_path
+      args += ["--coverage-root", self.class.coverage_root.to_s] if @coverage_path && self.class.coverage_root
       args += ["--faults", JSON.generate(faults)] if faults
       args += ["--wifi-networks", JSON.generate(networks)] if networks
       if memcheck
