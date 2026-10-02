@@ -9,7 +9,9 @@ require "uri"
 module TrmnlSim
   # Launches trmnl-sim (headless unless `gui: true`) and drives it over its control API.
   #
-  #   build_dir:  PlatformIO build dir containing firmware.elf etc.
+  #   firmware:   the merged flash image (merged_firmware.bin), with its ELF at the same path with
+  #               .elf; or a PlatformIO build dir, for its merged_firmware.bin (see
+  #               TrmnlSim.merged_image).
   #   flash:      flash image path; defaults to a fresh temp file (deleted on close).
   #   erase:      start from erased flash (factory reset). Implied for a new temp flash.
   #   mac:        device MAC, e.g. "D8:3B:DA:F5:28:3C" (the server identity).
@@ -53,12 +55,13 @@ module TrmnlSim
       block ? sim.session(&block) : sim
     end
 
-    attr_reader :build_dir, :flash, :log_path, :name, :coverage_path, :base, :pid, :memcheck_mode
+    attr_reader :firmware, :build_dir, :flash, :log_path, :name, :coverage_path, :base, :pid, :memcheck_mode
 
-    def initialize(build_dir, flash: nil, erase: false, mac: nil, turbo: false, gui: false, binary: nil,
+    def initialize(firmware, flash: nil, erase: false, mac: nil, turbo: false, gui: false, binary: nil,
                    extra_args: [], faults: nil, networks: nil, startup_timeout: 30, name: nil, restore: nil,
                    host_ports: {}, coverage: nil, memcheck: nil, memcheck_suppress: [])
-      @build_dir = File.expand_path(build_dir.to_s)
+      @firmware = TrmnlSim.merged_image(firmware)
+      @build_dir = File.dirname(@firmware)
       @tmpdir = Dir.mktmpdir("trmnl-sim-")
       @flash = flash ? flash.to_s : File.join(@tmpdir, "flash.bin")
       @log_path = File.join(@tmpdir, "sim.log")
@@ -68,7 +71,7 @@ module TrmnlSim
       binary = (binary || TrmnlSim.binary).to_s
       raise Error, "#{binary} not found; run `cargo build --release` in #{REPO}" unless File.exist?(binary)
 
-      args = [binary, @build_dir, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
+      args = [binary, @firmware, "--control", "127.0.0.1:0", "--portal-port", "0", "--flash", @flash]
       args << "--headless" unless gui
       args << "--erase" if erase || !flash
       args += ["--mac", mac] if mac

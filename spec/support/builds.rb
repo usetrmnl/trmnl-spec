@@ -25,11 +25,12 @@ module Builds
   # The build of PlatformIO environment `env` (it may not exist: see `built?`).
   def for_env(env) = File.expand_path(File.join(DIR, env.to_s))
 
-  def built?(env) = File.exist?(File.join(for_env(env), "firmware.elf"))
+  # The simulator runs the merged image (with firmware.elf, see TrmnlSim.merged_image).
+  def built?(env) = %w[merged_firmware.bin firmware.elf].all? { File.exist?(File.join(for_env(env), _1)) }
 
   # Why `env`'s tests can't run: its build is missing (nil: they can).
   def missing(env)
-    "no #{env} build at #{for_env(env)} (pio run -e #{env})" unless built?(env)
+    "no #{env} build (merged_firmware.bin, firmware.elf) at #{for_env(env)} (pio run -e #{env})" unless built?(env)
   end
 
   # The device a build directory is for (nil: unknown).

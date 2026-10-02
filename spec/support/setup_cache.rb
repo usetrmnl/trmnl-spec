@@ -24,9 +24,9 @@ module SetupCache
   FORMAT = 3
   # Entries kept per fixture name (e.g. while switching between firmware branches).
   KEEP = 3
-  # What the simulator loads from a PlatformIO build dir (see src/firmware.rs).
-  BUILD_FILES = %w[firmware.elf bootloader.elf firmware.bin bootloader.bin partitions.bin merged_firmware.bin
-                   littlefs.bin spiffs.bin].freeze
+  # What the simulator loads from a PlatformIO build dir (see src/firmware.rs), and the app
+  # image the OTA specs serve.
+  BUILD_FILES = %w[merged_firmware.bin firmware.elf firmware.bin].freeze
   # The code that drives the setup flows.
   SUPPORT_FILES = [
     *Dir[File.join(Builds::HERE, "lib/**/*.rb")],

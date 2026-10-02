@@ -5,7 +5,7 @@
 #
 #     require "trmnl_sim"                              # with this lib/ on the load path
 #
-#     TrmnlSim::Simulator.open("../trmnl-firmware/.pio/build/trmnl", erase: true) do |sim|
+#     TrmnlSim::Simulator.open("../trmnl-firmware/.pio/build/trmnl/merged_firmware.bin", erase: true) do |sim|
 #       sim.wait(portal: true, timeout: 60)              # device is in WiFi setup mode
 #       sim.wait(display_idle: true, min_refreshes: 1)
 #       sim.portal_connect("TRMNL-Sim", "secret")
@@ -24,6 +24,24 @@ module TrmnlSim
 
   # The simulator executable: SIM_BIN, else the checkout's release build.
   def self.binary = ENV.fetch("SIM_BIN", nil) || File.join(REPO, "target/release/trmnl-sim")
+
+  # The merged flash image the simulator runs, for a path to one or a PlatformIO build dir
+  # (its merged_firmware.bin). The simulator wants the ELF at the image's path with .elf;
+  # PlatformIO calls it firmware.elf, so a build dir gets a merged_firmware.elf symlink to it.
+  def self.merged_image(path)
+    path = File.expand_path(path.to_s)
+    return path unless File.directory?(path)
+
+    elf = File.join(path, "merged_firmware.elf")
+    if !File.exist?(elf) && File.exist?(File.join(path, "firmware.elf"))
+      begin
+        File.symlink("firmware.elf", elf)
+      rescue Errno::EEXIST
+        nil # another worker made it
+      end
+    end
+    File.join(path, "merged_firmware.bin")
+  end
 end
 
 require_relative "trmnl_sim/headers"
